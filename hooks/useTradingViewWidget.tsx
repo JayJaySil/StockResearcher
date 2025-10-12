@@ -1,23 +1,22 @@
 'use client';
 import {useEffect, useRef} from 'react'
 
-const  useTradingViewWidget = (scriptURL : string, config: Record<string, unknown>, height = 600) => {
-    const containerRef = useRef<HTMLDivElement | null>()
+const  useTradingViewWidget = (scriptUrl : string, config: Record<string, unknown>, height = 600) => {
+    const containerRef = useRef<HTMLDivElement | null>(null)
 
-    useEffect(
-        () => {
+    useEffect( () => {
 
-            if (!containerRef.current) return;
-            if (containerRef.current.dataset.loaded) return;
-            containerRef.current.innerHTML = `<div class="tradingview-widget-container__widget" style="width: 100%; height: ${height}px;"></div>`;
+        if (!containerRef.current) return;
+        if (containerRef.current.dataset.loaded) return;
+        containerRef.current.innerHTML = `<div class="tradingview-widget-container__widget" style="width: 100%; height: ${height}px;"></div>`;
 
-            const script = document.createElement("script");
-            script.src = scriptUrl;
-            script.async = true;
-            script.innerHTML = JSON.stringify(config);
+        const script = document.createElement("script");
+        script.src = scriptUrl;
+        script.async = true;
+        script.innerHTML = JSON.stringify(config);
 
-            containerRef.current.appendChild(script);
-            containerRef.current.dataset.loaded = 'true';
+        containerRef.current.appendChild(script);
+        containerRef.current.dataset.loaded = 'true';
 
             return () => {
                 if(containerRef.current) {
@@ -25,7 +24,7 @@ const  useTradingViewWidget = (scriptURL : string, config: Record<string, unknow
                     delete containerRef.current.dataset.loaded;
                 }
             }
-        }, [scriptURL, config, height]
+        }, [scriptUrl, config, height]
     );
 
     return containerRef;
