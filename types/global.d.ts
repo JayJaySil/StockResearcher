@@ -5,14 +5,17 @@ declare global {
     };
 
     type SignUpFormData = {
-        fullName: string;
+        name: string;
         email: string;
         password: string;
-        country: string;
-        investmentGoals: string;
-        riskTolerance: string;
-        preferredIndustry: string;
     };
+
+    export type CompanyItem = {
+        id: string
+        symbol: string
+        name: string
+        favorite?: boolean
+    }
 
     type CountrySelectProps = {
         name: string;

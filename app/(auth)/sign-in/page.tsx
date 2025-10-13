@@ -23,12 +23,16 @@ const SignIn = () => {
     const onSubmit = async (data: SignInFormData) => {
         try {
             const result = await signInWithEmail(data);
-            if(result.success) router.push('/');
-        } catch (e) {
-            console.error(e);
-            toast.error('Sign in failed', {
-                description: e instanceof Error ? e.message : 'Failed to sign in.'
-            })
+            if (result.success) {
+                toast.success('Signed in');
+                router.push('/');
+            } else {
+                toast.error('Sign in failed', {
+                    description: (result as any).error ?? 'Failed to sign in.'
+                });
+            }
+        } catch (error) {
+            console.error(error);
         }
     }
 
@@ -41,10 +45,14 @@ const SignIn = () => {
                 <InputField
                     name="email"
                     label="Email"
-                    placeholder="contact@jsmastery.com"
+                    placeholder="Enter a valid email"
+                    type="email"
                     register={register}
                     error={errors.email}
-                    validation={{ required: 'Email name is required', pattern: /^\w+@\w+\.\w+$/, message: 'Email address is required' }}
+                    validation={{
+                        required: 'Email is required',
+                        pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Please enter a valid email address' }
+                    }}
                 />
                 <InputField
                     name="password"
