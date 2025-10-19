@@ -6,33 +6,12 @@ import {auth} from "@/lib/better-auth/auth";
 import {headers} from "next/headers";
 import {redirect} from "next/navigation";
 import {revalidatePath} from "next/cache";
-
-export const getWatchlistSymbolsByEmail = async (email: string): Promise<string[]> => {
-  if (!email) return [];
-
-  try {
-    const mongoose = await connectToDatabase();
-    const db = mongoose.connection.db;
-    if (!db) throw new Error('MongoDB connection not found');
-
-    const user = await db.collection('user').findOne<{ id?: string; _id?: unknown; email?: string }>({ email });
-    if (!user) return [];
-
-    const userId = (user.id as string) || (user._id ? String(user._id) : '');
-    if (!userId) return [];
-
-    const items = await Watchlist.find({ userId }).select('symbol -_id').lean().exec();
-    if (!items || items.length === 0) return [];
-
-    return items.map((item) => String(item.symbol))
-  } catch (err) {
-    console.error('getWatchlistSymbolsByEmail error:', err);
-    return [];
-  }
-};
+import {Company} from "@/database/models/company.model";
+import {isValidStockSymbol} from "@/lib/actions/setsmart.actions";
+import {ObjectId} from "mongodb";
 
 // Add stock to watchlist
-export const addToWatchlist = async (symbol: string, company: string) => {
+export const addToWatchlist = async (symbol: string) => {
     try {
         const session = await auth.api.getSession({
             headers: await headers(),
@@ -40,7 +19,7 @@ export const addToWatchlist = async (symbol: string, company: string) => {
         if (!session?.user) redirect('/sign-in');
 
         // Check if stock already exists in watchlist
-        const existingItem = await Watchlist.findOne({
+        const existingItem = await Company.findOne({
             userId: session.user.id,
             symbol: symbol.toUpperCase(),
         });
@@ -49,14 +28,23 @@ export const addToWatchlist = async (symbol: string, company: string) => {
             return { success: false, error: 'Stock already in watchlist' };
         }
 
+        //Check if symbol exists in SETSMART
+        const checkSymbol = await isValidStockSymbol(symbol);
+
+        if (!checkSymbol) {
+            return { success: false, error: 'Invalid stock symbol' };
+        }
+
+        const id = new ObjectId();
+
         // Add to watchlist
-        const newItem = new Watchlist({
+        const newCompany = new Company({
             userId: session.user.id,
+            companyId: id.toString(),
             symbol: symbol.toUpperCase(),
-            company: company.trim(),
         });
 
-        await newItem.save();
+        await newCompany.save();
         revalidatePath('/watchlist');
 
         return { success: true, message: 'Stock added to watchlist' };
@@ -75,7 +63,7 @@ export const removeFromWatchlist = async (symbol: string) => {
         if (!session?.user) redirect('/sign-in');
 
         // Remove from watchlist
-        await Watchlist.deleteOne({
+        await Company.deleteOne({
             userId: session.user.id,
             symbol: symbol.toUpperCase(),
         });
