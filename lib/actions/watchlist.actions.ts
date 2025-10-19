@@ -1,7 +1,6 @@
 'use server'
 
 import { connectToDatabase } from '@/database/mongoose';
-import { Watchlist } from '@/database/models/watchlist.model';
 import {auth} from "@/lib/better-auth/auth";
 import {headers} from "next/headers";
 import {redirect} from "next/navigation";
@@ -13,6 +12,8 @@ import {ObjectId} from "mongodb";
 // Add stock to watchlist
 export const addToWatchlist = async (symbol: string) => {
     try {
+        await connectToDatabase()
+
         const session = await auth.api.getSession({
             headers: await headers(),
         });
@@ -50,13 +51,15 @@ export const addToWatchlist = async (symbol: string) => {
         return { success: true, message: 'Stock added to watchlist' };
     } catch (error) {
         console.error('Error adding to watchlist:', error);
-        throw new Error('Failed to add stock to watchlist');
+        return { success: false, error: 'Failed to add stock to watchlist' };
     }
 };
 
 // Remove stock from watchlist
 export const removeFromWatchlist = async (symbol: string) => {
     try {
+        await connectToDatabase()
+
         const session = await auth.api.getSession({
             headers: await headers(),
         });
@@ -72,6 +75,27 @@ export const removeFromWatchlist = async (symbol: string) => {
         return { success: true, message: 'Stock removed from watchlist' };
     } catch (error) {
         console.error('Error removing from watchlist:', error);
-        throw new Error('Failed to remove stock from watchlist');
+        return { success: false, error: 'Failed to remove stock from watchlist' };
+    }
+};
+
+export const getUserWatchlist = async () => {
+    try {
+        await connectToDatabase()
+
+        const session = await auth.api.getSession({
+            headers: await headers(),
+        });
+        if (!session?.user) redirect('/sign-in');
+
+        const watchlist = await Company.find({ userId: session.user.id })
+        .sort({ addedAt: -1 })
+        .lean();
+
+        return JSON.parse(JSON.stringify(watchlist));
+
+    } catch (error) {
+        console.error('Error fetching watchlist:', error);
+        return [];
     }
 };

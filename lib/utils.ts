@@ -5,6 +5,13 @@ export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
 
+export const formatDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 export const formatTimeAgo = (timestamp: number) => {
     const now = Date.now();
     const diffInMs = now - timestamp * 1000; // Convert to milliseconds
@@ -26,13 +33,13 @@ export function delay(ms: number) {
 }
 
 // Formatted string like "$3.10T", "$900.00B", "$25.00M" or "$999,999.99"
-export function formatMarketCapValue(marketCapUsd: number): string {
-    if (!Number.isFinite(marketCapUsd) || marketCapUsd <= 0) return 'N/A';
+export function formatLargeNum(number: number): string {
+    if (!Number.isFinite(number) || number <= 0) return 'N/A';
 
-    if (marketCapUsd >= 1e12) return `$${(marketCapUsd / 1e12).toFixed(2)}T`; // Trillions
-    if (marketCapUsd >= 1e9) return `$${(marketCapUsd / 1e9).toFixed(2)}B`; // Billions
-    if (marketCapUsd >= 1e6) return `$${(marketCapUsd / 1e6).toFixed(2)}M`; // Millions
-    return `$${marketCapUsd.toFixed(2)}`; // Below one million, show full USD amount
+    if (number >= 1e12) return `${(number / 1e12).toFixed(2)}T`; // Trillions
+    if (number >= 1e9) return `${(number / 1e9).toFixed(2)}B`; // Billions
+    if (number >= 1e6) return `${(number / 1e6).toFixed(2)}M`; // Millions
+    return `${number.toFixed(2)}`; // Below one million, show full amount
 }
 
 export const getDateRange = (days: number) => {
@@ -110,8 +117,6 @@ export const getChangeColorClass = (changePercent?: number) => {
 
 export const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
         minimumFractionDigits: 2,
     }).format(price);
 };

@@ -1,5 +1,5 @@
 export const NAV_ITEMS = [
-    { href: '/company', label: 'Company Dashboard' },
+    { href: '/dashboard', label: 'Company Dashboard' },
     { href: '/financial', label: 'Financial Data' },
     { href: '/summariser', label: '56-1 Summariser' }
 ];

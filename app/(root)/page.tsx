@@ -1,12 +1,54 @@
-import {Button} from "@/components/ui/button";
-import TradingViewWidget from "@/components/ui/TradingViewWidget";
-import {MARKET_OVERVIEW_WIDGET_CONFIG, HEATMAP_WIDGET_CONFIG, TOP_STORIES_WIDGET_CONFIG, MARKET_DATA_WIDGET_CONFIG} from "@/lib/constants";
-import { Star } from 'lucide-react';
+'use client'
 
+import React, { useState, useEffect } from 'react'
+import { Star } from 'lucide-react'
+import AddStock from '@/components/AddStock'
+import WatchlistTable from '@/components/WatchlistTable'
+import { getUserWatchlist } from '@/lib/actions/watchlist.actions'
 
-const Home = async () => {
+type Company = {
+    _id: string
+    symbol: string
+    favourite?: boolean
+    userId: string
+    companyId: string
+    addedAt: Date
+}
 
-    const watchlist = []; // We'll get the actual watchlist items later
+const Home = () => {
+    const [watchlist, setWatchlist] = useState<Company[]>([])
+    const [loading, setLoading] = useState(true)
+
+    // Load watchlist from database
+    const loadWatchlist = async () => {
+        setLoading(true)
+        try {
+            const data = await getUserWatchlist()
+            setWatchlist(data)
+        } catch (error) {
+            console.error('Error loading watchlist:', error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    // Load watchlist when page loads
+    useEffect(() => {
+        loadWatchlist()
+    }, [])
+
+    // Reload watchlist when stock is added or removed
+    const handleUpdate = () => {
+        loadWatchlist()
+    }
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center py-20">
+                <p className="text-gray-400">Loading...</p>
+            </div>
+        )
+    }
 
     // Empty state
     if (watchlist.length === 0) {
@@ -16,24 +58,26 @@ const Home = async () => {
                     <Star className="watchlist-star" />
                     <h2 className="empty-title">Your watchlist is empty</h2>
                     <p className="empty-description">
-                        Start building your watchlist by searching for stocks and clicking the star icon to add them.
+                        Start building your watchlist by adding Thai stock symbols.
                     </p>
                 </div>
-                {/*<SearchCommand initialStocks={initialStocks} />*/}
+                <AddStock onAdded={handleUpdate} />
             </section>
-        );
+        )
     }
 
+    // Watchlist with data
     return (
         <section className="watchlist">
             <div className="flex flex-col gap-6">
                 <div className="flex items-center justify-between">
-                    <h2 className="watchlist-title">Watchlist</h2>
-                    {/*<SearchCommand initialStocks={initialStocks} />*/}
+                    <h2 className="watchlist-title">My Watchlist</h2>
+                    <AddStock onAdded={handleUpdate} />
                 </div>
-                {/* WatchlistTable */}
+                <WatchlistTable companies={watchlist} onRemove={handleUpdate} />
             </div>
         </section>
-    );
+    )
 }
+
 export default Home

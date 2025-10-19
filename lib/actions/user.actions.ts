@@ -24,6 +24,3 @@ export const getAllUsersForNewsEmail = async () => {
     }
 }
 
-export const getUserCompanies = async (userId: string) => {
-
-}

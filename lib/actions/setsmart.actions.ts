@@ -1,15 +1,9 @@
 'use server'
 
-/**
- * Checks if a given SET/SETTRADE stock code appears valid by querying the SETSMART EOD endpoint.
- * - Input: any string; normalized to UPPERCASE and trimmed.
- * - Returns: boolean (true if recent EOD data exists for the symbol, else false).
- * - Notes:
- *   - Performs a quick regex sanity check (A–Z, 0–9 and dash, 1–8 chars).
- *   - Queries a 14-day date range to avoid weekend/holiday false negatives.
- *   - Requires SETSMART_API_KEY in environment; missing key returns false.
- */
-export async function isValidStockSymbol(symbol: string): Promise<boolean> {
+import { formatDate } from '../utils';
+
+// Checks if a given SET/SETTRADE stock code appears valid by querying the SETSMART EOD endpoint.
+export const isValidStockSymbol = async (symbol: string): Promise<boolean> => {
   try {
     if (!symbol) return false;
     const sym = symbol.trim().toUpperCase();
@@ -60,5 +54,66 @@ export async function isValidStockSymbol(symbol: string): Promise<boolean> {
   } catch (error) {
     console.error('Error checking SET/SETTRADE symbol:', error);
     return false;
+  }
+}
+
+//Return SETSMART most recent basic Stock Info
+export const getBasicStockInfo = async (symbol: string): Promise<any> => {
+  const apiKey = process.env.SETSMART_API_KEY;
+  if (!apiKey) {
+    console.error('SETSMART_API_KEY is not set in environment');
+    return { success: false, error: 'SETSMART_API_KEY is not set in environment' };
+  }
+
+  const sym = (symbol || '').trim().toUpperCase();
+  if (!sym) return { success: false, error: 'Symbol is required' };
+
+  // Build date range: start = today, end = today - 20
+  const today = new Date();
+  const startDate = formatDate(today);
+  const endDateObj = new Date(today);
+  endDateObj.setDate(today.getDate() - 20);
+  const endDate = formatDate(endDateObj);
+
+  try {
+    const url = new URL('https://www.setsmart.com/api/listed-company-api/eod-price-by-symbol');
+    url.searchParams.set('symbol', sym);
+    url.searchParams.set('startDate', startDate);
+    url.searchParams.set('endDate', endDate);
+    url.searchParams.set('adjustedPriceFlag', 'N');
+
+    const res = await fetch(url.toString(), {
+      method: 'GET',
+      headers: { 'api-key': apiKey },
+      cache: 'no-store',
+    });
+
+    if (!res.ok) {
+      return { success: false, error: `SETSMART response ${res.status}` };
+    }
+
+    let json: any;
+    try {
+      json = await res.json();
+    } catch {
+      return { success: false, error: 'Invalid JSON from SETSMART' };
+    }
+
+    // Normalize to array and return the last (most recent) entry 
+    let arr: any[] = [];
+    if (Array.isArray(json)) {
+      arr = json;
+    } else if (json && typeof json === 'object' && Array.isArray((json as any).data)) {
+      arr = (json as any).data;
+    }
+
+    if (arr.length === 0) {
+      return { success: false, error: 'No data in last 20 days' };
+    }
+    console.log(arr)
+    return arr[arr.length - 1];
+  } catch (error) {
+    console.error('Error getting SETSMART basic stock info:', error);
+    return { success: false, error: 'Failed to get basic stock info' };
   }
 }

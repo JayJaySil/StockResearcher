@@ -4,6 +4,31 @@ declare global {
         password: string;
     };
 
+    type SETSMARTStockQuote = {
+        date: string;
+        symbol: string;
+        securityType: string;
+        adjustedPriceFlag: string;
+        prior: number;
+        open: number;
+        high: number;
+        low: number;
+        close: number;
+        average: number;
+        aomVolume: number;
+        aomValue: number;
+        trVolume: number;
+        trValue: number;
+        totalVolume: number;
+        totalValue: number;
+        pe: number;
+        pbv: number;
+        bvps: number;
+        dividendYield: number;
+        marketCap: number;
+        volumeTurnover: number;
+    };
+
     type SignUpFormData = {
         name: string;
         email: string;
