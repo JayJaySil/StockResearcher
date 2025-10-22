@@ -1,10 +1,10 @@
-import {Schema, model, models, Document, Model, Expression} from 'mongoose';
+import mongoose, {Schema, model, models, Document, Model, Expression} from 'mongoose';
 
 export interface DividendItem extends Document {
     companyId: string;
     dividendId: string;
     payDate: Date;
-    divPerShare: number;
+    dividendYield: number; // percent value, e.g., 5.17
 }
 
 const DividendSchema = new Schema<DividendItem>(
@@ -12,7 +12,7 @@ const DividendSchema = new Schema<DividendItem>(
         dividendId: { type: String, required: true, index: true },
         companyId: { type: String, required: true, index: true },
         payDate: { type: Date, required: true },
-        divPerShare: { type: Number, required: true },
+        dividendYield: { type: Number, required: true },
     },
     {
         timestamps: false,
@@ -22,5 +22,9 @@ const DividendSchema = new Schema<DividendItem>(
 // Sorted from newest to oldest
 DividendSchema.index({ payDate: -1 });
 
-export const Dividend: Model<DividendItem> =
-    (models?.Dividend as Model<DividendItem>) || model<DividendItem>('Dividend', DividendSchema);
+// In dev with hot-reload, Mongoose caches models. Delete the old model
+// if it exists so schema changes (like renaming fields) take effect.
+if (mongoose.models.Dividend) {
+  try { mongoose.deleteModel('Dividend') } catch { /* ignore */ }
+}
+export const Dividend: Model<DividendItem> = model<DividendItem>('Dividend', DividendSchema);

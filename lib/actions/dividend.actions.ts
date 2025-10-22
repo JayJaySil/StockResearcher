@@ -5,7 +5,7 @@ import { connectToDatabase } from '@/database/mongoose'
 import { Dividend } from '@/database/models/dividend.model'
 import { v4 as uuidv4 } from 'uuid'
 
-type DividendInput = { payDate: Date | string; divPerShare: number }
+type DividendInput = { payDate: Date | string; dividendYield: number }
 
 export type BulkUpsertDividendsResult =
   | { success: true; count: number }
@@ -30,7 +30,7 @@ export async function bulkUpsertDividends(
       dividendId: uuidv4(),
       companyId,
       payDate: i.payDate instanceof Date ? i.payDate : new Date(i.payDate),
-      divPerShare: i.divPerShare,
+      dividendYield: i.dividendYield,
     }))
 
     const res = await Dividend.insertMany(docs)

@@ -10,7 +10,8 @@ export interface SummaryItem extends Document {
 const SummarySchema = new Schema<SummaryItem>(
     {
         summaryId: { type: String, required: true, index: true },
-        companyId: { type: String, required: true, index: true },
+        // Do not set `index: true` here; a unique index is declared below.
+        companyId: { type: String, required: true },
         summary: { type: String, default: null },
         addedAt: { type: Date, default: Date.now },
     },

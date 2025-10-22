@@ -17,7 +17,7 @@ type DividendUploaderProps = {
   onSaved?: (count: number) => void
 }
 
-type ParsedDividend = { payDate: Date; divPerShare: number }
+type ParsedDividend = { payDate: Date; dividendYield: number }
 
 // Parse dates like 5/23/2025 or 05/23/2025 (MM/DD/YYYY) using a simple loop
 function parseUSDate(input: string): Date | null {
@@ -56,7 +56,7 @@ function parseUSDate(input: string): Date | null {
 function findHeaderRow(rows: any[][]): { rowIndex: number; columns: Record<string, number> } | null {
   // Fixed columns, but discover the header row dynamically by scanning the first 30 rows.
   const SYMBOL_COL = 0; // A
-  const DPS_COL = 3; // D (Dividend per Share)
+  const YIELD_COL = 12; // M (Dividend Yield)
   const PAYDATE_COL = 8; // I (Payment Date)
 
   const MAX_SCAN_ROWS = Math.min(rows.length, 30);
@@ -64,17 +64,17 @@ function findHeaderRow(rows: any[][]): { rowIndex: number; columns: Record<strin
     const row = rows[idx];
     if (!row) continue;
 
-    const dpsHeader = String(row[DPS_COL] ?? "").toLowerCase();
+    const yieldHeader = String(row[YIELD_COL] ?? "").toLowerCase();
     const symHeader = String(row[SYMBOL_COL] ?? "").toLowerCase();
     const payHeader = String(row[PAYDATE_COL] ?? "").toLowerCase();
 
-    const looksValid = dpsHeader.includes("dividend") && !dpsHeader.includes("yield") &&
+    const looksValid = yieldHeader.includes("yield") && yieldHeader.includes("dividend") &&
       symHeader.includes("symbol") && payHeader.includes("payment") && payHeader.includes("date");
 
     if (looksValid) {
       return {
         rowIndex: idx,
-        columns: { symbol: SYMBOL_COL, dividendPerShare: DPS_COL, paymentDate: PAYDATE_COL },
+        columns: { symbol: SYMBOL_COL, dividendYield: YIELD_COL, paymentDate: PAYDATE_COL },
       };
     }
   }
@@ -112,15 +112,15 @@ export default function DividendUploader({ symbol, companyId, className, onSaved
       const start = rowIndex + 1
 
       const parsed: ParsedDividend[] = []
-      const skipCounts = { symbolMismatch: 0, invalidDate: 0, invalidDps: 0 }
+      const skipCounts = { symbolMismatch: 0, invalidDate: 0, invalidYield: 0 }
       for (let r = start; r < rows.length; r++) {
         const row = rows[r] || []
         const sym = String(row[columns.symbol] ?? "").trim()
         const payDateRaw = row[columns.paymentDate]
-        const dpsRaw = row[columns.dividendPerShare]
+        const yieldRaw = row[columns.dividendYield]
 
         // Stop if we hit a totally empty line
-        const isEmpty = [sym, payDateRaw, dpsRaw].every((v) => v == null || (typeof v === 'string' && v.trim() === ""))
+        const isEmpty = [sym, payDateRaw, yieldRaw].every((v) => v == null || (typeof v === 'string' && v.trim() === ""))
         if (isEmpty) break
 
         // Ensure the symbol column is either empty or matches the provided symbol
@@ -144,14 +144,15 @@ export default function DividendUploader({ symbol, companyId, className, onSaved
           continue
         }
 
-        // Parse dividend amount (strip any non-numeric except - and .)
-        const dps = typeof dpsRaw === "number" ? dpsRaw : parseFloat(String(dpsRaw ?? "").replace(/[^0-9.-]/g, ""))
-        if (!Number.isFinite(dps)) {
-          skipCounts.invalidDps += 1
+        // Parse dividend yield percent (strip any non-numeric except - and .), round to 2 decimals
+        const yv = typeof yieldRaw === "number" ? yieldRaw : parseFloat(String(yieldRaw ?? "").replace(/[^0-9.-]/g, ""))
+        if (!Number.isFinite(yv)) {
+          skipCounts.invalidYield += 1
           continue
         }
+        const rounded = Math.round(yv * 100) / 100
 
-        parsed.push({ payDate, divPerShare: dps })
+        parsed.push({ payDate, dividendYield: rounded })
       }
 
       if (parsed.length === 0) {
@@ -159,12 +160,12 @@ export default function DividendUploader({ symbol, companyId, className, onSaved
         return
       }
 
-      const totalSkipped = skipCounts.symbolMismatch + skipCounts.invalidDate + skipCounts.invalidDps
+      const totalSkipped = skipCounts.symbolMismatch + skipCounts.invalidDate + skipCounts.invalidYield
       if (totalSkipped > 0) {
         toast(
           `Skipped ${totalSkipped} row(s)` +
             ` — invalid date: ${skipCounts.invalidDate},` +
-            ` invalid amount: ${skipCounts.invalidDps},` +
+            ` invalid yield: ${skipCounts.invalidYield},` +
             ` symbol mismatch: ${skipCounts.symbolMismatch}`
         )
       }

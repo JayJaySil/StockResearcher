@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { useSearchParams } from 'next/navigation'
+import OneReportSummarizer from '@/components/OneReportSummarizer'
 
 const Summariser = () => {
   const searchParams = useSearchParams()
@@ -17,9 +18,8 @@ const Summariser = () => {
       <h1 className="text-2xl font-bold text-gray-100 mb-4">
         {symbol} - 56-1 Summariser
       </h1>
-      <div className="p-4 bg-gray-800 rounded">
-        <p className="text-gray-300">Company ID: {companyId}</p>
-        <p className="text-gray-400 mt-2">Summariser content will go here...</p>
+      <div className="space-y-4">
+        <OneReportSummarizer symbol={symbol} companyId={companyId} />
       </div>
     </div>
   )

@@ -26,7 +26,7 @@ const DividendChart = ({ companyId, className }: DividendChartProps) => {
         const mapped: Row[] = Array.isArray(rows)
           ? rows.map((r: any) => ({
               date: new Date(r.payDate).toISOString().slice(0, 10),
-              value: Number(r.divPerShare) || 0,
+              value: Math.round(((Number(r.dividendYield) || 0) * 100)) / 100,
             }))
           : []
         setData(mapped)
@@ -48,7 +48,7 @@ const DividendChart = ({ companyId, className }: DividendChartProps) => {
   return (
     <div className={className}>
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-sm text-muted-foreground">Dividend per Share</span>
+        <span className="text-sm text-muted-foreground">Dividend Yield (%)</span>
         {loading ? <span className="text-xs text-muted-foreground">Loading...</span> : null}
       </div>
       <div className="w-full">
@@ -56,7 +56,7 @@ const DividendChart = ({ companyId, className }: DividendChartProps) => {
           <BarChart data={data} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
             <XAxis dataKey="date" tickMargin={8} />
-            <YAxis dataKey="value" width={60} />
+            <YAxis dataKey="value" width={60} tickFormatter={(v) => `${v}%`} />
             <Tooltip />
             <Bar dataKey="value" fill="#f59e0b" />
           </BarChart>
