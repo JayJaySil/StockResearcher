@@ -1,9 +1,11 @@
+// Server actions for authentication (sign up/in/out) via Better Auth.
 'use server';
 import {auth} from "@/lib/better-auth/auth";
 import {inngest} from "@/lib/inngest/client";
 import {headers} from "next/headers";
 
 
+// Sign a user up with email/password
 export const signUpWithEmail = async ({email, password, name}: SignUpFormData) => {
     try {
         const response = await auth.api.signUpEmail({
@@ -17,6 +19,7 @@ export const signUpWithEmail = async ({email, password, name}: SignUpFormData) =
     }
 }
 
+// Sign the current session out.
 export const signOut = async () => {
     try {
         await auth.api.signOut({ headers: await headers()});
@@ -26,6 +29,7 @@ export const signOut = async () => {
     }
 }
 
+// Sign a user in with email/password.
 export const signInWithEmail = async ({email, password}: SignInFormData) => {
     try {
         const response = await auth.api.signInEmail({

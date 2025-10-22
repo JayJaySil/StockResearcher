@@ -1,3 +1,4 @@
+// Better Auth singleton + initialization bound to a MongoDB adapter.
 import { betterAuth } from "better-auth";
 import {mongodbAdapter} from "better-auth/adapters/mongodb";
 import {connectToDatabase} from "@/database/mongoose";
@@ -5,6 +6,7 @@ import {nextCookies} from "better-auth/next-js";
 
 let authInstance: ReturnType<typeof betterAuth> | null = null;
 
+// Lazily initialize and cache the auth instance (server-side).
 export const getAuth = async () => {
     if(authInstance) return authInstance;
 

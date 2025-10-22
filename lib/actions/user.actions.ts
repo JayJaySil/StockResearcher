@@ -1,7 +1,9 @@
+// Server actions for user queries used by background jobs.
 'use server'
 
 import {connectToDatabase} from "@/database/mongoose";
 
+// Return a minimal list of users (id, email, name) eligible for news emails.
 export const getAllUsersForNewsEmail = async () => {
     try {
         const mongoose = await connectToDatabase();

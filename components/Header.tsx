@@ -8,9 +8,9 @@ const Header = ({user} : {user : User}) => {
     return (
         <header className="sticky top-0 header">
             <div className="container header-wrapper">
-                <h1 className="text-2xl font-bold text-white">Stock Researcher</h1>
-                <nav className="hidden sm:block">
-                </nav>
+                <Link href="/">
+                    <h1 className="text-2xl font-bold text-white cursor-pointer">Stock Researcher</h1> 
+                </Link>
                 <UserDropdown user={user} />
             </div>
         </header>

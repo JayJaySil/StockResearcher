@@ -1,3 +1,4 @@
+// Inngest client used to define and trigger background functions.
 import { Inngest } from "inngest";
 
 export const inngest = new Inngest({

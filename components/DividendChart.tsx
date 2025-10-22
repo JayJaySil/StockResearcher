@@ -16,31 +16,32 @@ const DividendChart = ({ companyId, className }: DividendChartProps) => {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    let gone = false
+    let canceled = false
     setLoading(true)
-    getDividendsByCompany(companyId)
-      .then((rows: any[]) => {
-        if (gone) return
+
+    const load = async () => {
+      try {
+        const rows: any[] = await getDividendsByCompany(companyId)
+        if (canceled) return
         const mapped: Row[] = Array.isArray(rows)
-          ? rows
-              .map((r: any) => ({
-                date: new Date(r.payDate).toISOString().slice(0, 10),
-                value: Number(r.dividendYield), // percent value like 2.66
-              }))
-              .filter((p) => Number.isFinite(p.value))
+          ? rows.map((r: any) => ({
+              date: new Date(r.payDate).toISOString().slice(0, 10),
+              value: Number(r.divPerShare) || 0,
+            }))
           : []
         setData(mapped)
-      })
-      .catch(() => {
-        if (gone) return
+      } catch (_err) {
+        if (canceled) return
         setData([])
-      })
-      .finally(() => {
-        if (gone) return
+      } finally {
+        if (canceled) return
         setLoading(false)
-      })
+      }
+    }
+
+    load()
     return () => {
-      gone = true
+      canceled = true
     }
   }, [companyId])
 
@@ -55,8 +56,8 @@ const DividendChart = ({ companyId, className }: DividendChartProps) => {
           <BarChart data={data} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
             <XAxis dataKey="date" tickMargin={8} />
-            <YAxis dataKey="value" width={60} tickFormatter={(v: number) => `${v}%`} />
-            <Tooltip formatter={(v: number) => [`${v}%`, 'Dividend Yield']} />
+            <YAxis dataKey="value" width={60} />
+            <Tooltip />
             <Bar dataKey="value" fill="#f59e0b" />
           </BarChart>
         </ResponsiveContainer>

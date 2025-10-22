@@ -2,8 +2,14 @@
 // gets access to browser functionalities eg, path
 import React from 'react'
 import Link from "next/link";
-import {NAV_ITEMS} from "@/lib/constants";
 import {usePathname, useSearchParams} from "next/navigation";
+
+const NAV_ITEMS = [
+    { href: '/dashboard', label: 'Company Dashboard' },
+    { href: '/financial', label: 'Financial Data' },
+    { href: '/summariser', label: '56-1 Summariser' }
+];
+
 
 const NavItems = () => {
     const pathname:string = usePathname()

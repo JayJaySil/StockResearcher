@@ -1,3 +1,4 @@
+// Background jobs powered by Inngest (welcome email, daily news, etc).
 import {inngest} from "@/lib/inngest/client";
 import {PERSONALIZED_WELCOME_EMAIL_PROMPT} from "@/lib/inngest/prompt";
 import {sendWelcomeEmail} from "@/lib/nodemailer";

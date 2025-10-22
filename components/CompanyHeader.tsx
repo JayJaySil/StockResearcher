@@ -9,7 +9,7 @@ const CompanyHeader = ({user} : {user : User}) => {
         <header className="sticky top-0 header">
             <div className="container header-wrapper">
                 <Link href="/">
-                    <Image src="/assets/icons/logo.svg" alt="stockResearch logo" width={140} height={32} className="h-8 w-auto cursor-pointer" />
+                    <h1 className="text-2xl font-bold text-white cursor-pointer">Stock Researcher</h1> 
                 </Link>
                 <nav className="hidden sm:block">
                     <NavItems />

@@ -1,15 +1,18 @@
+// Server actions for dividend CRUD and queries.
 'use server'
 
 import { connectToDatabase } from '@/database/mongoose'
 import { Dividend } from '@/database/models/dividend.model'
 import { v4 as uuidv4 } from 'uuid'
 
-type DividendInput = { payDate: Date | string; divPerShare: number; dividendYield?: number }
+type DividendInput = { payDate: Date | string; divPerShare: number }
 
 export type BulkUpsertDividendsResult =
   | { success: true; count: number }
   | { success: false; error: string }
 
+// Replace all dividend rows for a company with the provided items.
+// Returns a discriminated result with `count` on success.
 export async function bulkUpsertDividends(
   companyId: string,
   items: DividendInput[],
@@ -28,7 +31,6 @@ export async function bulkUpsertDividends(
       companyId,
       payDate: i.payDate instanceof Date ? i.payDate : new Date(i.payDate),
       divPerShare: i.divPerShare,
-      dividendYield: typeof i.dividendYield === 'number' ? i.dividendYield : undefined,
     }))
 
     const res = await Dividend.insertMany(docs)
@@ -39,6 +41,7 @@ export async function bulkUpsertDividends(
   }
 }
 
+// Query all dividends for a company (ascending by payDate).
 export async function getDividendsByCompany(companyId: string) {
   try {
     if (!companyId) return []

@@ -1,3 +1,4 @@
+// Server actions for CRUD on the user's watchlist.
 'use server'
 
 import { connectToDatabase } from '@/database/mongoose';
@@ -10,6 +11,7 @@ import {isValidStockSymbol} from "@/lib/actions/setsmart.actions";
 import {ObjectId} from "mongodb";
 
 // Add stock to watchlist
+// Add a symbol to the authenticated user's watchlist.
 export const addToWatchlist = async (symbol: string) => {
     try {
         await connectToDatabase()
@@ -56,6 +58,7 @@ export const addToWatchlist = async (symbol: string) => {
 };
 
 // Remove stock from watchlist
+// Remove a symbol from the authenticated user's watchlist.
 export const removeFromWatchlist = async (symbol: string) => {
     try {
         await connectToDatabase()
@@ -79,6 +82,7 @@ export const removeFromWatchlist = async (symbol: string) => {
     }
 };
 
+// Fetch the authenticated user's watchlist as plain JSON objects.
 export const getUserWatchlist = async () => {
     try {
         await connectToDatabase()

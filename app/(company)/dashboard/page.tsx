@@ -2,8 +2,11 @@
 
 import React, { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { getBasicStockInfo } from '@/lib/actions/setsmart.actions'
+import { getBasicStockInfo } from '@/lib/actions/dashboard.actions'
 import { formatLargeNum, formatPrice } from '@/lib/utils';
+import PriceChart from '@/components/PriceChart';
+import DividendUploader from '@/components/DividendUploader';
+import DividendChart from '@/components/DividendChart';
 
 const Dashboard = () => {
   const searchParams = useSearchParams()
@@ -20,6 +23,7 @@ const Dashboard = () => {
 
   const [basicStockInfo, setBasicStockInfo] = useState<SETSMARTStockQuote>({} as SETSMARTStockQuote)
   const [loading, setLoading] = useState(true)
+  const [divRefreshKey, setDivRefreshKey] = useState(0)
 
   // Load watchlist from database
   const loadBasicStockInfo = async () => {
@@ -29,7 +33,7 @@ const Dashboard = () => {
       setBasicStockInfo(data)
       console.log(basicStockInfo)
     } catch (error) {
-      console.error('Error loading watchlist:', error)
+      console.error('Error loading company information:', error)
       } finally {
           setLoading(false)
       }
@@ -77,6 +81,19 @@ const Dashboard = () => {
               <li>P/E: <span className="text-white">{basicStockInfo.pe}</span></li>
               <li>P/B: <span className="text-white">{basicStockInfo.pbv}</span></li>
             </ul>
+        </div>
+
+        <div className="p-4 bg-gray-800 rounded">
+          <h2 className="text-lg font-semibold text-gray-200 mb-2">Price Chart</h2>
+          <PriceChart symbol={symbol} />
+        </div>
+
+        <div className="p-4 bg-gray-800 rounded">
+          <h2 className="text-lg font-semibold text-gray-200 mb-2">Dividend History</h2>
+          <div className="space-y-4">
+            <DividendUploader symbol={symbol} companyId={companyId} onSaved={() => setDivRefreshKey((k) => k + 1)} />
+            <DividendChart key={divRefreshKey} companyId={companyId} />
+          </div>
         </div>
       </div>
     </div>

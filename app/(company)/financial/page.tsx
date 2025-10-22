@@ -40,85 +40,127 @@ const FinancialPage = () => {
     loadFinancialInfo()
   }, [])
 
-  // Make a list of years (ascending)
-  const years = Array.from(
-    new Set(financialInfo.map((f) => f.year).filter((y): y is number => !!y))
-  ).sort((a, b) => a - b)
+  // Pick the latest record for each year
+const latestByYear: Record<number, SETSMARTFinancials> = {};
 
-  // For each year, keep the latest quarter we have
-  const latestByYear: Record<number, SETSMARTFinancials> = {}
-  for (const r of financialInfo) {
-    if (!r.year) continue
-    const prev = latestByYear[r.year]
-    if (!prev || (r.quarter ?? 0) > (prev.quarter ?? 0)) latestByYear[r.year] = r
+for (const rec of financialInfo) {
+  const saved = latestByYear[rec.year];
+  // if we don't have this year yet, or this record has a bigger quarter, replace it
+  if (!saved || rec.quarter > saved.quarter) {
+    latestByYear[rec.year] = rec;
   }
+}
 
-  // Build columns for yearly table
-  const yearCols: Column<MetricRow>[] = [
-    { key: "metric", header: "Metric", format: (_: unknown, row) => row.label },
-  ]
-  for (const y of years) {
-    yearCols.push({
-      key: String(y),
-      header: String(y),
-      format: (_: unknown, row) => formatCell((latestByYear[y] as any)?.[row.key]),
-    })
-  }
+// Build columns for the yearly table
+const yearCols: Column<MetricRow>[] = [
+  { key: "metric", header: "Metric", format: (rawColumn: unknown, row) => row.label },
+];
 
-  // Build quarter labels like "2024 Q4" (ascending)
-  const quarterLabelsAll: string[] = []
-  for (const r of financialInfo) {
-    if (r.year && r.quarter) quarterLabelsAll.push(`${r.year} Q${r.quarter}`)
-  }
-  const quarters = Array.from(new Set(quarterLabelsAll))
-    .sort((a, b) => {
-      const [ya, qa] = a.split(" Q").map(Number)
-      const [yb, qb] = b.split(" Q").map(Number)
-      return ya === yb ? qa - qb : ya - yb
-    })
-    .slice(-5) // only keep 5 most recent
+// make a sorted list of unique years (ascending)
+const yearSet = new Set<number>();
+for (const rec of financialInfo) {
+  if (rec.year) yearSet.add(rec.year);
+}
+const years = Array.from(yearSet).sort((a, b) => a - b);
 
-  // Map quarter string to record
-  const byYQ: Record<string, SETSMARTFinancials> = {}
-  for (const r of financialInfo) {
-    if (r.year && r.quarter) byYQ[`${r.year}-Q${r.quarter}`] = r
-  }
+// add a column for each year, grabbing values from latestByYear
+for (const y of years) {
+  yearCols.push({
+    key: String(y),
+    header: String(y),
+    format: (_: unknown, row) => {
+      const rec: any = latestByYear[y];
+      return formatCell(rec ? rec[row.key] : undefined);
+    },
+  });
+}
 
-  // Build columns for quarterly table
-  const quarterCols: Column<MetricRow>[] = [
-    { key: "metric", header: "Metric", format: (_: unknown, row) => row.label },
-  ]
-  for (const lbl of quarters) {
-    quarterCols.push({
-      key: lbl,
-      header: lbl,
-      format: (_: unknown, row) => {
-        const [y, q] = lbl.split(" ")
-        const rec = byYQ[`${Number(y)}-Q${Number(q.slice(1))}`] as any
-        return formatCell(rec?.[row.key])
-      },
-    })
+// Build quarter labels eg. "2024 Q4"
+const quarterLabels: string[] = [];
+for (const record of financialInfo) {
+  if (record.year && record.quarter) {
+    quarterLabels.push(`${record.year} Q${record.quarter}`);
   }
+}
+
+// make them unique and sort ascending by year then quarter
+const uniqueQuarterLabels = Array.from(new Set(quarterLabels)).sort((quarterA, quarterB) => {
+  const [yearAString, quarterANumberString] = quarterA.split(" Q");
+  const [yearBString, quarterBNumberString] = quarterB.split(" Q");
+
+  const yearA = Number(yearAString);
+  const yearB = Number(yearBString);
+  const quarterAValue = Number(quarterANumberString);
+  const quarterBValue = Number(quarterBNumberString);
+
+  // If same year, sort by quarter number
+  if (yearA === yearB) return quarterAValue - quarterBValue;
+
+  // Otherwise, sort by year
+  return yearA - yearB;
+});
+
+// keep only the 5 most recent (end of the list)
+const lastFiveQuarterLabels = uniqueQuarterLabels.slice(-5);
+
+// map "YYYY-QX" -> record for quick lookup
+const recordByYQ: Record<string, SETSMARTFinancials> = {};
+for (const record of financialInfo) {
+  if (record.year && record.quarter) {
+    recordByYQ[`${record.year}-Q${record.quarter}`] = record;
+  }
+}
+
+// Create array of collumn definitions
+const quarterCols: Column<MetricRow>[] = [
+  { key: "metric", header: "Metric", format: (rawMetric: unknown, row) => row.label },
+];
+
+for (const label of lastFiveQuarterLabels) {
+  // label is "2024 Q4" -> convert to "2024-Q4" for map key
+  const [yearText, qText] = label.split(" ");
+  const yearNum = Number(yearText);           // "2024" -> 2024
+  const quarterNum = Number(qText.slice(1));     // "Q4"   -> 4
+  const key = `${yearNum}-Q${quarterNum}`;
+
+  quarterCols.push({
+    key: label,
+    header: label,
+    format: (rawLabel: unknown, row) => {
+      const rec: any = recordByYQ[key];
+      return formatCell(rec ? rec[row.key] : undefined);
+    },
+  });
+}
 
   // Metric lists: simple and explicit
   const balanceMetrics: MetricRow[] = [
-    { key: "totalAssets", label: "Total Assets" },
-    { key: "totalLiabilities", label: "Total Liabilities" },
-    { key: "shareholderEquity", label: "Shareholder Equity" },
-    { key: "paidupShareCapital", label: "Paid-up Share Capital" },
+    { key: "totalAssets", label: "Total Assets (THB thousands)" },
+    { key: "totalLiabilities", label: "Total Liabilities (THB thousands)" },
+    { key: "shareholderEquity", label: "Shareholder Equity (THB thousands)" },
+    { key: "paidupShareCapital", label: "Paid-up Share Capital (THB thousands)" },
   ]
 
-  const plMetrics: MetricRow[] = [
-    { key: "totalRevenueAccum", label: "Total Revenue (Accum)" },
-    { key: "ebitAccum", label: "EBIT (Accum)" },
-    { key: "netProfitAccum", label: "Net Profit (Accum)" },
-    { key: "epsAccum", label: "EPS (Accum)" },
+  // Profit/Loss metrics
+  // Yearly: use accumulated values
+  const plMetricsYearly: MetricRow[] = [
+    { key: "totalRevenueAccum", label: "Total Revenue (THB thousands)" },
+    { key: "ebitAccum", label: "EBIT (THB thousands)" },
+    { key: "netProfitAccum", label: "Net Profit (THB thousands)" },
+    { key: "epsAccum", label: "EPS (THB thousands)" },
+  ]
+  // Quarterly: use quarter values (non-accumulated)
+  const plMetricsQuarterly: MetricRow[] = [
+    { key: "totalRevenueQuarter", label: "Total Revenue (THB thousands)" },
+    { key: "ebitQuarter", label: "EBIT (THB thousands)" },
+    { key: "netProfitQuarter", label: "Net Profit (THB thousands)" },
+    { key: "epsQuarter", label: "EPS (THB thousands)" },
   ]
 
   const cashFlowMetrics: MetricRow[] = [
-    { key: "operatingCashFlow", label: "Operating Cash Flow" },
-    { key: "investingCashFlow", label: "Investing Cash Flow" },
-    { key: "financingCashFlow", label: "Financing Cash Flow" },
+    { key: "operatingCashFlow", label: "Operating Cash Flow (THB thousands)" },
+    { key: "investingCashFlow", label: "Investing Cash Flow (THB thousands)" },
+    { key: "financingCashFlow", label: "Financing Cash Flow (THB thousands)" },
   ]
 
   return (
@@ -133,8 +175,8 @@ const FinancialPage = () => {
 
       <PeriodTable
         title="Profit / Loss"
-        yearly={{ columns: yearCols, rows: plMetrics }}
-        quarterly={{ columns: quarterCols, rows: plMetrics }}
+        yearly={{ columns: yearCols, rows: plMetricsYearly }}
+        quarterly={{ columns: quarterCols, rows: plMetricsQuarterly }}
       />
 
       <PeriodTable

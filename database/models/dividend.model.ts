@@ -5,7 +5,6 @@ export interface DividendItem extends Document {
     dividendId: string;
     payDate: Date;
     divPerShare: number;
-    dividendYield?: number; // percent value, e.g., 2.66 means 2.66%
 }
 
 const DividendSchema = new Schema<DividendItem>(
@@ -14,7 +13,6 @@ const DividendSchema = new Schema<DividendItem>(
         companyId: { type: String, required: true, index: true },
         payDate: { type: Date, required: true },
         divPerShare: { type: Number, required: true },
-        dividendYield: { type: Number, required: false, default: null },
     },
     {
         timestamps: false,

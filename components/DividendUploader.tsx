@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { bulkUpsertDividends, type BulkUpsertDividendsResult } from "@/lib/actions/dividend.actions"
 import * as XLSX from "xlsx"
+import Link from "next/link"
 
 type DividendUploaderProps = {
   symbol: string
@@ -16,43 +17,68 @@ type DividendUploaderProps = {
   onSaved?: (count: number) => void
 }
 
-type ParsedDividend = { payDate: Date; divPerShare: number; dividendYield?: number }
+type ParsedDividend = { payDate: Date; divPerShare: number }
 
-// Parse dates like 5/23/2025 or 05/23/2025 (MM/DD/YYYY)
+// Parse dates like 5/23/2025 or 05/23/2025 (MM/DD/YYYY) using a simple loop
 function parseUSDate(input: string): Date | null {
-  const s = String(input).trim()
-  const m = s.match(/^\s*(\d{1,2})\/(\d{1,2})\/(\d{4})\s*$/)
-  if (!m) return null
-  const month = Number(m[1])
-  const day = Number(m[2])
-  const year = Number(m[3])
-  if (!month || !day || !year) return null
-  const d = new Date(year, month - 1, day)
-  return isNaN(d.getTime()) ? null : d
+  const trimmed = String(input).trim()
+  const s = trimmed.endsWith("*") ? trimmed.slice(0, -1).trim() : trimmed
+
+  const parts: number[] = []
+  let token = ""
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i]
+    if (ch >= "0" && ch <= "9") {
+      token += ch
+    } else if (ch === "/") {
+      if (token.length === 0) return null
+      parts.push(Number(token))
+      token = ""
+    } else if (ch === " ") {
+      // ignore spaces
+      continue
+    } else {
+      return null
+    }
+  }
+  if (token.length > 0) parts.push(Number(token))
+  if (parts.length !== 3) return null
+
+  const [month, day, year] = parts
+  if (month < 1 || month > 12 || day < 1 || day > 31 || year < 1000 || year > 9999) return null
+
+  const dt = new Date(year, month - 1, day)
+  if (dt.getFullYear() !== year || dt.getMonth() !== month - 1 || dt.getDate() !== day) return null
+  return dt
 }
 
 // Find the header row by looking for required column labels
 function findHeaderRow(rows: any[][]): { rowIndex: number; columns: Record<string, number> } | null {
-  const symRe = /\bsymbol\b/i
-  const payDateRe = /payment\s*date/i
-  const dpsRe = /dividend\s*(?:\(\s*per\s*share\s*\)|per\s*share|per\s*sh|per\s*si)/i
-  const yieldRe = /dividend\s*yield/i
+  // Fixed columns, but discover the header row dynamically by scanning the first 30 rows.
+  const SYMBOL_COL = 0; // A
+  const DPS_COL = 3; // D (Dividend per Share)
+  const PAYDATE_COL = 8; // I (Payment Date)
 
-  for (let r = 0; r < rows.length; r++) {
-    const row = rows[r] || []
-    const map: Record<string, number> = {}
-    for (let c = 0; c < row.length; c++) {
-      const cell = String(row[c] ?? "")
-      if (symRe.test(cell)) map.symbol = c
-      if (payDateRe.test(cell)) map.paymentDate = c
-      if (yieldRe.test(cell)) map.dividendYield = c
-      if (dpsRe.test(cell)) map.dividendPerShare = c
-    }
-    if (map.symbol != null && map.paymentDate != null && (map.dividendPerShare != null || map.dividendYield != null)) {
-      return { rowIndex: r, columns: map }
+  const MAX_SCAN_ROWS = Math.min(rows.length, 30);
+  for (let idx = 0; idx < MAX_SCAN_ROWS; idx++) {
+    const row = rows[idx];
+    if (!row) continue;
+
+    const dpsHeader = String(row[DPS_COL] ?? "").toLowerCase();
+    const symHeader = String(row[SYMBOL_COL] ?? "").toLowerCase();
+    const payHeader = String(row[PAYDATE_COL] ?? "").toLowerCase();
+
+    const looksValid = dpsHeader.includes("dividend") && !dpsHeader.includes("yield") &&
+      symHeader.includes("symbol") && payHeader.includes("payment") && payHeader.includes("date");
+
+    if (looksValid) {
+      return {
+        rowIndex: idx,
+        columns: { symbol: SYMBOL_COL, dividendPerShare: DPS_COL, paymentDate: PAYDATE_COL },
+      };
     }
   }
-  return null
+  return null;
 }
 
 export default function DividendUploader({ symbol, companyId, className, onSaved }: DividendUploaderProps) {
@@ -60,13 +86,16 @@ export default function DividendUploader({ symbol, companyId, className, onSaved
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0]
-    if (!file) return
+    if (!file) {
+      toast.error("No file selected")
+      return
+    }
     setParsing(true)
     try {
-      const ab = await file.arrayBuffer()
-      const wb = XLSX.read(ab, { type: "array" })
-      const ws = wb.Sheets[wb.SheetNames[0]]
-      const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][]
+      const fileArrayBuffer = await file.arrayBuffer()
+      const workbook = XLSX.read(fileArrayBuffer, { type: "array" })
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]]
+      const rows: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][]
 
       if (!rows || rows.length === 0) {
         toast.error("Spreadsheet is empty")
@@ -83,19 +112,22 @@ export default function DividendUploader({ symbol, companyId, className, onSaved
       const start = rowIndex + 1
 
       const parsed: ParsedDividend[] = []
+      const skipCounts = { symbolMismatch: 0, invalidDate: 0, invalidDps: 0 }
       for (let r = start; r < rows.length; r++) {
         const row = rows[r] || []
         const sym = String(row[columns.symbol] ?? "").trim()
         const payDateRaw = row[columns.paymentDate]
-        const dpsRaw = columns.dividendPerShare != null ? row[columns.dividendPerShare] : undefined
-        const yieldRaw = columns.dividendYield != null ? row[columns.dividendYield] : undefined
+        const dpsRaw = row[columns.dividendPerShare]
 
         // Stop if we hit a totally empty line
-        const isEmpty = [sym, payDateRaw, dpsRaw, yieldRaw].every((v) => v == null || (typeof v === 'string' && v.trim() === ""))
+        const isEmpty = [sym, payDateRaw, dpsRaw].every((v) => v == null || (typeof v === 'string' && v.trim() === ""))
         if (isEmpty) break
 
         // Ensure the symbol column is either empty or matches the provided symbol
-        if (sym && sym.toUpperCase() !== symbol.toUpperCase()) continue
+        if (sym && sym.toUpperCase() !== symbol.toUpperCase()) {
+          skipCounts.symbolMismatch += 1
+          continue
+        }
 
         // Parse payment date (can come as excel serial, JS date, or string)
         let payDate: Date | null = null
@@ -107,29 +139,34 @@ export default function DividendUploader({ symbol, companyId, className, onSaved
         } else if (typeof payDateRaw === "string") {
           payDate = parseUSDate(payDateRaw)
         }
-        if (!payDate) continue
+        if (!payDate) {
+          skipCounts.invalidDate += 1
+          continue
+        }
 
         // Parse dividend amount (strip any non-numeric except - and .)
-        let dps: number | undefined = undefined
-        if (dpsRaw != null) {
-          dps = typeof dpsRaw === "number" ? dpsRaw : parseFloat(String(dpsRaw ?? "").replace(/[^0-9.-]/g, ""))
-          if (!Number.isFinite(dps)) dps = undefined
+        const dps = typeof dpsRaw === "number" ? dpsRaw : parseFloat(String(dpsRaw ?? "").replace(/[^0-9.-]/g, ""))
+        if (!Number.isFinite(dps)) {
+          skipCounts.invalidDps += 1
+          continue
         }
 
-        let dividendYield: number | undefined = undefined
-        if (yieldRaw != null) {
-          dividendYield = typeof yieldRaw === "number" ? yieldRaw : parseFloat(String(yieldRaw ?? "").replace(/[^0-9.-]/g, ""))
-          if (!Number.isFinite(dividendYield)) dividendYield = undefined
-        }
-
-        if (dps == null && dividendYield == null) continue
-
-        parsed.push({ payDate, divPerShare: dps ?? 0, dividendYield })
+        parsed.push({ payDate, divPerShare: dps })
       }
 
       if (parsed.length === 0) {
         toast.error("No dividend rows found to import")
         return
+      }
+
+      const totalSkipped = skipCounts.symbolMismatch + skipCounts.invalidDate + skipCounts.invalidDps
+      if (totalSkipped > 0) {
+        toast(
+          `Skipped ${totalSkipped} row(s)` +
+            ` — invalid date: ${skipCounts.invalidDate},` +
+            ` invalid amount: ${skipCounts.invalidDps},` +
+            ` symbol mismatch: ${skipCounts.symbolMismatch}`
+        )
       }
 
       // Persist to MongoDB via server action
@@ -149,6 +186,7 @@ export default function DividendUploader({ symbol, companyId, className, onSaved
     }
   }, [companyId, symbol, onSaved])
 
+  //Validation checks
   const onDropRejected = useCallback((fileRejections: FileRejection[]) => {
     if (fileRejections.length === 0) return
     const hasTooLarge = fileRejections.some((r) => r.errors.some((e) => e.code === "file-too-large"))
@@ -158,12 +196,13 @@ export default function DividendUploader({ symbol, companyId, className, onSaved
     if (!hasTooLarge && !invalidType) toast.error(fileRejections[0]?.errors[0]?.message || "File rejected")
   }, [])
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
     onDropRejected,
     maxFiles: 1,
     multiple: false,
     maxSize: 10 * 1024 * 1024,
+    noClick: true,
     accept: {
       "application/vnd.ms-excel": [".xls"],
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
@@ -186,7 +225,15 @@ export default function DividendUploader({ symbol, companyId, className, onSaved
         ) : (
           <div className="flex flex-col items-center justify-center h-full w-full gap-y-3">
             <p>Drag and drop the dividend Excel, or click to select</p>
-            <Button disabled={parsing}>{parsing ? "Parsing..." : "Select File"}</Button>
+            <Link
+              href="https://www.setsmart.com/ssm/rightsAndBenefits;viewBy=byCompany;caType=XD"
+              target="_blank"
+              onClick={(e) => e.stopPropagation()}
+              className="text-sm underline text-blue-500"
+            >
+              Link for downloading dividend data from SETSMART
+            </Link>
+            <Button onClick={open} disabled={parsing}>{parsing ? "Parsing..." : "Select File"}</Button>
           </div>
         )}
       </CardContent>

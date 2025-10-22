@@ -29,6 +29,36 @@ declare global {
         volumeTurnover: number;
     };
 
+    export type SETSMARTFinancials = {
+    symbol: string;
+    year: number;
+    quarter: number;
+    dateAsof: string;
+    financialStatementType: string;
+    accountPeriod: string;
+
+    // Balance sheet (THB thousands)
+    totalAssets: number;
+    totalLiabilities: number;
+    shareholderEquity: number;
+    paidupShareCapital: number;
+
+    // P/L (quarter & accum)
+    totalRevenueQuarter: number;
+    totalRevenueAccum: number;
+    ebitQuarter: number;
+    ebitAccum: number;
+    netProfitQuarter: number;
+    netProfitAccum: number;
+    epsQuarter: number; // Baht/share
+    epsAccum: number;   // Baht/share
+
+    // Cash flows (THB thousands, per quarter)
+    operatingCashFlow: number;
+    investingCashFlow: number;
+    financingCashFlow: number;
+    };
+
     type SignUpFormData = {
         name: string;
         email: string;
