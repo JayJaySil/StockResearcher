@@ -1,7 +1,6 @@
 // Server actions for authentication (sign up/in/out) via Better Auth.
 'use server';
 import {auth} from "@/lib/better-auth/auth";
-import {inngest} from "@/lib/inngest/client";
 import {headers} from "next/headers";
 
 
