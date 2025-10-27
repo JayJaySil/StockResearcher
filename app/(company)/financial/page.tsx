@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react"
 import PeriodTable, { Column } from "@/components/PeriodTable"
-import { formatCell } from "@/lib/financial.format"
+import { formatCell, uniqueSortedQuarterLabels } from "@/lib/financial.format"
 import { useSearchParams } from "next/navigation"
 import { getFinancials } from "@/lib/actions/financial.actions"
 
@@ -83,22 +83,7 @@ for (const record of financialInfo) {
   }
 }
 
-// make them unique and sort ascending by year then quarter
-const uniqueQuarterLabels = Array.from(new Set(quarterLabels)).sort((quarterA, quarterB) => {
-  const [yearAString, quarterANumberString] = quarterA.split(" Q");
-  const [yearBString, quarterBNumberString] = quarterB.split(" Q");
-
-  const yearA = Number(yearAString);
-  const yearB = Number(yearBString);
-  const quarterAValue = Number(quarterANumberString);
-  const quarterBValue = Number(quarterBNumberString);
-
-  // If same year, sort by quarter number
-  if (yearA === yearB) return quarterAValue - quarterBValue;
-
-  // Otherwise, sort by year
-  return yearA - yearB;
-});
+  const uniqueQuarterLabels = uniqueSortedQuarterLabels(quarterLabels)
 
 // keep only the 5 most recent (end of the list)
 const lastFiveQuarterLabels = uniqueQuarterLabels.slice(-5);
@@ -133,7 +118,7 @@ for (const label of lastFiveQuarterLabels) {
   });
 }
 
-  // Metric lists: simple and explicit
+  // Balance sheet metrics
   const balanceMetrics: MetricRow[] = [
     { key: "totalAssets", label: "Total Assets (THB thousands)" },
     { key: "totalLiabilities", label: "Total Liabilities (THB thousands)" },

@@ -6,7 +6,6 @@ import { Summary } from "@/database/models/summary.model";
 import { v4 as uuidv4 } from "uuid";
 
 // Use Gemini for summarization. Expects GEMINI_API_KEY in env.
-// Accepts: { key: string; fileName?: string; contentType?: string; symbol?: string }
 export const runtime = 'nodejs'
 
 export async function POST(req: Request) {
