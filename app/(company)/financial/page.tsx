@@ -1,12 +1,12 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
-import PeriodTable, { Column } from "@/components/PeriodTable"
-import { formatCell, uniqueSortedQuarterLabels } from "@/lib/financial.format"
+import PeriodTable from "@/components/PeriodTable"
+import { buildQuarterColumns, buildYearColumns, FinancialMetricRow } from "@/lib/financial.format"
 import { useSearchParams } from "next/navigation"
 import { getFinancials } from "@/lib/actions/financial.actions"
 
-type MetricRow = { key: keyof SETSMARTFinancials; label: string }
+type MetricRow = FinancialMetricRow
 
 const FinancialPage = () => {
   const searchParams = useSearchParams()
@@ -40,83 +40,9 @@ const FinancialPage = () => {
     loadFinancialInfo()
   }, [])
 
-  // Pick the latest record for each year
-const latestByYear: Record<number, SETSMARTFinancials> = {};
+  const yearCols = buildYearColumns(financialInfo)
 
-for (const rec of financialInfo) {
-  const saved = latestByYear[rec.year];
-  // if we don't have this year yet, or this record has a bigger quarter, replace it
-  if (!saved || rec.quarter > saved.quarter) {
-    latestByYear[rec.year] = rec;
-  }
-}
-
-// Build columns for the yearly table
-const yearCols: Column<MetricRow>[] = [
-  { key: "metric", header: "Metric", format: (rawColumn: unknown, row) => row.label },
-];
-
-// make a sorted list of unique years (ascending)
-const yearSet = new Set<number>();
-for (const rec of financialInfo) {
-  if (rec.year) yearSet.add(rec.year);
-}
-const years = Array.from(yearSet).sort((a, b) => a - b);
-
-// add a column for each year, grabbing values from latestByYear
-for (const y of years) {
-  yearCols.push({
-    key: String(y),
-    header: String(y),
-    format: (_: unknown, row) => {
-      const rec: any = latestByYear[y];
-      return formatCell(rec ? rec[row.key] : undefined);
-    },
-  });
-}
-
-// Build quarter labels eg. "2024 Q4"
-const quarterLabels: string[] = [];
-for (const record of financialInfo) {
-  if (record.year && record.quarter) {
-    quarterLabels.push(`${record.year} Q${record.quarter}`);
-  }
-}
-
-  const uniqueQuarterLabels = uniqueSortedQuarterLabels(quarterLabels)
-
-// keep only the 5 most recent (end of the list)
-const lastFiveQuarterLabels = uniqueQuarterLabels.slice(-5);
-
-// map "YYYY-QX" -> record for quick lookup
-const recordByYQ: Record<string, SETSMARTFinancials> = {};
-for (const record of financialInfo) {
-  if (record.year && record.quarter) {
-    recordByYQ[`${record.year}-Q${record.quarter}`] = record;
-  }
-}
-
-// Create array of collumn definitions
-const quarterCols: Column<MetricRow>[] = [
-  { key: "metric", header: "Metric", format: (rawMetric: unknown, row) => row.label },
-];
-
-for (const label of lastFiveQuarterLabels) {
-  // label is "2024 Q4" -> convert to "2024-Q4" for map key
-  const [yearText, qText] = label.split(" ");
-  const yearNum = Number(yearText);           // "2024" -> 2024
-  const quarterNum = Number(qText.slice(1));     // "Q4"   -> 4
-  const key = `${yearNum}-Q${quarterNum}`;
-
-  quarterCols.push({
-    key: label,
-    header: label,
-    format: (rawLabel: unknown, row) => {
-      const rec: any = recordByYQ[key];
-      return formatCell(rec ? rec[row.key] : undefined);
-    },
-  });
-}
+  const quarterCols = buildQuarterColumns(financialInfo, 5)
 
   // Balance sheet metrics
   const balanceMetrics: MetricRow[] = [
