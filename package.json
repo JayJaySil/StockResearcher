@@ -5,8 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
-    "start": "next start",
-    "test:symbol": "node scripts\\test-symbol.mjs"
+    "start": "next start"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.913.0",

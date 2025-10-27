@@ -1,4 +1,6 @@
 'use client'
+// PriceChart shows historical EOD prices for a symbol with selectable ranges
+// and fetches data via a server action, displaying a responsive line chart.
 
 import { useEffect, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';

@@ -1,3 +1,4 @@
+// Header renders the global app header with brand and user actions.
 import React from 'react'
 import Link from "next/link";
 import Image from "next/image";

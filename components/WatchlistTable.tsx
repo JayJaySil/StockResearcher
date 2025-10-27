@@ -1,4 +1,6 @@
 'use client'
+// WatchlistTable renders the user's saved companies and supports removal with
+// discriminated server-action results surfaced via toast messages.
 
 import React, { useState } from 'react'
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table'

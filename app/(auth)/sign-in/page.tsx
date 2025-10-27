@@ -1,4 +1,6 @@
 'use client'
+// SignIn page that authenticates users via Better Auth and shows
+// discriminated result toasts on success/failure.
 import React from 'react'
 import { useForm } from "react-hook-form";
 import {Button} from "@/components/ui/button";

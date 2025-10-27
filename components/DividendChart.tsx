@@ -1,4 +1,6 @@
 'use client'
+// DividendChart displays dividend yield over time for a company using recharts,
+// loading rows from the server and mapping them to { date, value }.
 
 import React, { useEffect, useState } from 'react'
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
