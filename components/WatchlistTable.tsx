@@ -41,7 +41,7 @@ const WatchlistTable = ({ companies, onRemove }: WatchlistTableProps) => {
                 toast.success(`Removed ${symbol} from watchlist`)
                 onRemove?.()
             } else {
-                toast.error('Failed to remove stock')
+                toast.error(result.error || 'Failed to remove stock')
             }
         } catch (error) {
             toast.error('Something went wrong')

@@ -35,13 +35,21 @@ export default function OneReportSummarizer({ symbol, companyId, className }: Pr
       fd.append("fileName", file.name)
 
       const res = await fetch("/api/ai/summarize-56-1", { method: "POST", body: fd })
-      if (!res.ok) throw new Error("Summarization failed")
+      if (!res.ok) {
+        let message = "Summarization failed"
+        try {
+          const err = await res.json()
+          message = err?.error || message
+        } catch {}
+        throw new Error(message)
+      }
       const data = await res.json()
       setSummary(data.summary || "")
       toast.success("Summarized successfully")
     } catch (e) {
       console.error(e)
-      toast.error("Failed to upload or summarize the report")
+      const msg = e instanceof Error ? e.message : "Failed to upload or summarize the report"
+      toast.error(msg)
     } finally {
       setSummarizing(false)
     }
@@ -69,7 +77,7 @@ export default function OneReportSummarizer({ symbol, companyId, className }: Pr
     if (rejections.length === 0) return
     const tooLarge = rejections.some((r) => r.errors.some((e) => e.code === "file-too-large"))
     const invalid = rejections.some((r) => r.errors.some((e) => e.code === "file-invalid-type"))
-    if (tooLarge) toast.error("File too large (max 30MB)")
+    if (tooLarge) toast.error("File too large (max 4MB)")
     if (invalid) toast.error("Invalid type. Please upload a PDF.")
   }, [])
 
@@ -78,7 +86,7 @@ export default function OneReportSummarizer({ symbol, companyId, className }: Pr
     onDropRejected,
     maxFiles: 1,
     multiple: false,
-    maxSize: 20 * 1024 * 1024, //20 MB
+    maxSize: 4 * 1024 * 1024, // 4 MB to match Vercel body limit for Serverless
     noClick: true,
     accept: { "application/pdf": [".pdf"] },
   })

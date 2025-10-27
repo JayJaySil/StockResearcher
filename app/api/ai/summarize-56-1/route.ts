@@ -7,6 +7,8 @@ import { v4 as uuidv4 } from "uuid";
 
 // Use Gemini for summarization. Expects GEMINI_API_KEY in env.
 export const runtime = 'nodejs'
+// Request longer execution window on Vercel (best-effort, plan-dependent)
+export const maxDuration = 60
 
 export async function POST(req: Request) {
   try {
@@ -50,7 +52,8 @@ export async function POST(req: Request) {
 
     // Newly uploaded files may be PROCESSING. Poll until ACTIVE before using.
     async function waitForActive(name: string, signal?: AbortSignal) {
-      const timeoutMs = Number(process.env.GEMINI_FILE_ACTIVATE_TIMEOUT_MS || 300_000); // default 5 minutes
+      const envTimeout = Number(process.env.GEMINI_FILE_ACTIVATE_TIMEOUT_MS || 300_000);
+      const timeoutMs = Math.min(Number.isFinite(envTimeout) ? envTimeout : 300_000, 55_000); // keep under typical serverless limits
       const deadline = Date.now() + timeoutMs;
       let wait = 1_000; // start 1s, backoff to max 5s
       let lastState: string | undefined = uploadedFileAny.state as string | undefined;
