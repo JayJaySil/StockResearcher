@@ -79,7 +79,7 @@ export default function OneReportSummarizer({ symbol, companyId, className }: Pr
     if (rejections.length === 0) return
     const tooLarge = rejections.some((r) => r.errors.some((e) => e.code === "file-too-large"))
     const invalid = rejections.some((r) => r.errors.some((e) => e.code === "file-invalid-type"))
-    if (tooLarge) toast.error("File too large (max 20MB)")
+    if (tooLarge) toast.error("File too large (max 4.5MB)")
     if (invalid) toast.error("Invalid type. Please upload a PDF.")
   }, [])
 
@@ -88,7 +88,7 @@ export default function OneReportSummarizer({ symbol, companyId, className }: Pr
     onDropRejected,
     maxFiles: 1,
     multiple: false,
-    maxSize: 20 * 1024 * 1024, // 20 MB for now, will change to 4MB later for vercel
+    maxSize: 4.5 * 1024 * 1024, // 4.5 MB for vercel limit
     noClick: true,
     accept: { "application/pdf": [".pdf"] },
   })

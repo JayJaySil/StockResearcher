@@ -55,7 +55,7 @@ export default function DividendUploader({ symbol, companyId, className, onSaved
     if (fileRejections.length === 0) return
     const hasTooLarge = fileRejections.some((r) => r.errors.some((e) => e.code === "file-too-large"))
     const invalidType = fileRejections.some((r) => r.errors.some((e) => e.code === "file-invalid-type"))
-    if (hasTooLarge) toast.error("The file is too large. Max 10MB.")
+    if (hasTooLarge) toast.error("The file is too large. Max 4.5MB.")
     if (invalidType) toast.error("Invalid type. Upload .xls or .xlsx")
     if (!hasTooLarge && !invalidType) toast.error(fileRejections[0]?.errors[0]?.message || "File rejected")
   }, [])
@@ -65,7 +65,7 @@ export default function DividendUploader({ symbol, companyId, className, onSaved
     onDropRejected,
     maxFiles: 1,
     multiple: false,
-    maxSize: 10 * 1024 * 1024,
+    maxSize: 4.5 * 1024 * 1024, //4.5MB for vercel limit
     noClick: true,
     accept: {
       "application/vnd.ms-excel": [".xls"],
