@@ -11,6 +11,7 @@ import { toast } from "sonner"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import remarkBreaks from "remark-breaks"
+import Link from "next/link";
 
 type Props = {
   symbol: string
@@ -109,6 +110,14 @@ export default function OneReportSummarizer({ symbol, companyId, className }: Pr
           ) : (
             <div className="flex flex-col items-center justify-center h-full w-full gap-y-3">
               <p>Drag and drop 56-1 One Report (PDF), or click to select</p>
+              <Link
+              href="https://market.sec.or.th/public/idisc/en/Viewmore/fs-r561?fb_locale=en_US"
+              target="_blank"
+              onClick={(e) => e.stopPropagation()}
+              className="text-sm underline text-blue-500"
+              >
+                Link for downloading 56-1 Reports
+              </Link>
               <Button onClick={open} disabled={summarizing}>
                 {summarizing ? "Summarizing..." : "Select PDF"}
               </Button>
