@@ -2,9 +2,9 @@
 
 import React, { useEffect, useState } from "react"
 import PeriodTable from "@/components/PeriodTable"
-import { buildQuarterColumns, buildYearColumns, FinancialMetricRow } from "@/lib/financial.format"
+import { buildQuarterColumns, buildYearColumnsFromYearlyRows, FinancialMetricRow } from "@/lib/financial.format"
 import { useSearchParams } from "next/navigation"
-import { getFinancials } from "@/lib/actions/financial.actions"
+import { getFinancials, toYearlyBase } from "@/lib/actions/financial.actions"
 
 type MetricRow = FinancialMetricRow
 
@@ -22,6 +22,8 @@ const FinancialPage = () => {
   }
 
   const [financialInfo, setFinancialInfo] = useState<SETSMARTFinancials[]>([])
+  const [yearlyRows, setYearlyRows] = useState<Record<string, unknown>[]>([])
+  const [yearCols, setYearCols] = useState<Column<Record<string, unknown>>[]>([])
   const [loading, setLoading] = useState(true)
 
   const loadFinancialInfo = async () => {
@@ -29,6 +31,9 @@ const FinancialPage = () => {
     try {
       const data = await getFinancials(symbol)
       setFinancialInfo(data)
+      const yRows = await toYearlyBase(data)
+      setYearlyRows(yRows)
+      setYearCols(buildYearColumnsFromYearlyRows(yRows))
     } catch (error) {
       console.error("Error loading financial information:", error)
     } finally {
@@ -39,8 +44,6 @@ const FinancialPage = () => {
   useEffect(() => {
     loadFinancialInfo()
   }, [])
-
-  const yearCols = buildYearColumns(financialInfo)
 
   const quarterCols = buildQuarterColumns(financialInfo, 5)
 
@@ -74,25 +77,28 @@ const FinancialPage = () => {
     { key: "financingCashFlow", label: "Financing Cash Flow (THB thousands)" },
   ]
 
+  // Filter yearly rows per section based on metric key emitted by toYearlyBase
+  const filterYearly = (keys: string[]) => yearlyRows.filter(r => keys.includes(String((r as any).key)))
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Financial Data - {symbol}</h1>
 
       <PeriodTable
         title="Balance Sheet"
-        yearly={{ columns: yearCols, rows: balanceMetrics }}
+        yearly={{ columns: yearCols, rows: filterYearly(["totalAssets","totalLiabilities","shareholderEquity","paidupShareCapital"]) }}
         quarterly={{ columns: quarterCols, rows: balanceMetrics }}
       />
 
       <PeriodTable
         title="Profit / Loss"
-        yearly={{ columns: yearCols, rows: plMetricsYearly }}
+        yearly={{ columns: yearCols, rows: filterYearly(["totalRevenueAccum","ebitAccum","netProfitAccum","epsAccum"]) }}
         quarterly={{ columns: quarterCols, rows: plMetricsQuarterly }}
       />
 
       <PeriodTable
         title="Cash Flow"
-        yearly={{ columns: yearCols, rows: cashFlowMetrics }}
+        yearly={{ columns: yearCols, rows: filterYearly(["operatingCashFlow","investingCashFlow","financingCashFlow"]) }}
         quarterly={{ columns: quarterCols, rows: cashFlowMetrics }}
       />
     </div>

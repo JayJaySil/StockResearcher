@@ -5,102 +5,88 @@ export type FinancialMetricRow = { key: keyof SETSMARTFinancials; label: string 
 
 // Format a raw cell value for financial tables. Non numeric values is "-"
 // - Numbers are compacted (e.g., 1250000 -> "1.25M").
-export const formatCell = (v: unknown) => (
-  typeof v === 'number' ? formatLargeNum(v) : '-'
+export const formatCell = (value: unknown) => (
+  typeof value === 'number' ? formatLargeNum(value) : '-'
 )
 
-const parseQuarterLabel = (label: string): { year: number; quarter: number } => {
-  const [yearText, quarterText] = label.split(' ')
+//Parses '2024 Q1' To an object  { year: 2024, quarter: 1 }
+const parseQuarterLabel = (quarterLabel: string): { year: number; quarter: number } => {
+  const [yearText, quarterText] = quarterLabel.split(' ')
   return {
     year: Number(yearText),
     quarter: Number(quarterText.slice(1)),
   }
 }
 
-const quickSortQuarterLabels = (arr: string[]): string[] => {
-  if (arr.length <= 1) return arr.slice()
+const quickSortQuarterLabels = (labels: string[]): string[] => {
+  if (labels.length <= 1) return labels.slice()
 
-  const pivotIndex = Math.floor(arr.length / 2)
-  const pivot = arr[pivotIndex]
-  const pivotParsed = parseQuarterLabel(pivot)
+  const pivotIndex = Math.floor(labels.length / 2)
+  const pivotLabel = labels[pivotIndex]
+  const pivot = parseQuarterLabel(pivotLabel)
 
-  const left: string[] = []
-  const middle: string[] = []
-  const right: string[] = []
+  const earlierLabels: string[] = []
+  const sameLabels: string[] = []
+  const laterLabels: string[] = []
 
-  for (const label of arr) {
-    const parsed = parseQuarterLabel(label)
-    // Group labels strictly earlier than pivot into left, equal into middle, and later into right.
-    if (parsed.year === pivotParsed.year && parsed.quarter === pivotParsed.quarter) {
-      middle.push(label)
+  for (const quarterLabel of labels) {
+    const parsedLabel = parseQuarterLabel(quarterLabel)
+    // Group labels strictly earlier than pivot into earlier, equal into same, and later into later.
+    if (parsedLabel.year === pivot.year && parsedLabel.quarter === pivot.quarter) {
+      sameLabels.push(quarterLabel)
     } else if (
-      parsed.year < pivotParsed.year ||
-      (parsed.year === pivotParsed.year && parsed.quarter < pivotParsed.quarter)
+      parsedLabel.year < pivot.year ||
+      (parsedLabel.year === pivot.year && parsedLabel.quarter < pivot.quarter)
     ) {
-      left.push(label)
+      earlierLabels.push(quarterLabel)
     } else {
-      right.push(label)
+      laterLabels.push(quarterLabel)
     }
   }
 
   // Combine recursively sorted partitions with the pivot-equivalent labels in the middle.
-  return [...quickSortQuarterLabels(left), ...middle, ...quickSortQuarterLabels(right)]
+  return [
+    ...quickSortQuarterLabels(earlierLabels),
+    ...sameLabels,
+    ...quickSortQuarterLabels(laterLabels),
+  ]
 }
 
 // Deduplicate and quicksort quarter labels of the form "YYYY QN" ascending by year then quarter.
 export const uniqueSortedQuarterLabels = (labels: string[]): string[] => {
-  const unique = Array.from(new Set(labels))
-  return quickSortQuarterLabels(unique)
+  const uniqueLabels = Array.from(new Set(labels))
+  return quickSortQuarterLabels(uniqueLabels)
 }
 
 // Build a map of latest quarter records keyed by year.
-export const latestFinancialByYear = (rows: SETSMARTFinancials[]) => {
-  const map = new Map<number, SETSMARTFinancials>()
-  for (const rec of rows) {
-    if (!rec?.year) continue
-
-    // Only keep the most recent quarter encountered for each year.
-    const existing = map.get(rec.year)
-
-    if (!existing || Number(rec.quarter ?? 0) > Number(existing.quarter ?? 0)) {
-      map.set(rec.year, rec)
-    }
-  }
-  
-  return map
-}
-
-// Sorted list of year labels (ascending) from the latest-by-year map.
-export const sortedYearsFromMap = (map: Map<number, SETSMARTFinancials>) => (
-  Array.from(map.keys()).sort((a, b) => a - b)
-)
+// (Removed) latest-by-year helpers are redundant when using toYearlyBase.
 
 // Extract all quarter labels "YYYY QN" from raw rows.
 export const extractQuarterLabels = (rows: SETSMARTFinancials[]) => {
-  const labels: string[] = []
-  for (const record of rows) {
-    if (record?.year && record?.quarter) {
-      labels.push(`${record.year} Q${record.quarter}`)
+  const quarterLabels: string[] = []
+  for (const row of rows) {
+    if (row?.year && row?.quarter) {
+      quarterLabels.push(`${row.year} Q${row.quarter}`)
     }
   }
-  return labels
+  return quarterLabels
 }
 
 // Return the most recent N quarter labels (ascending order).
 export const lastNQuarterLabels = (rows: SETSMARTFinancials[], count = 5) => {
-  const sorted = uniqueSortedQuarterLabels(extractQuarterLabels(rows))
-  return sorted.slice(-count)
+  const sortedLabels = uniqueSortedQuarterLabels(extractQuarterLabels(rows))
+  return sortedLabels.slice(-count)
 }
 
 // Index financial rows by "YYYY-QN" for quick lookup.
 export const recordsByYearQuarter = (rows: SETSMARTFinancials[]) => {
-  const map = new Map<string, SETSMARTFinancials>()
-  for (const record of rows) {
-    if (record?.year && record?.quarter) {
-      map.set(`${record.year}-Q${record.quarter}`, record)
+  const indexByYearQuarter = new Map<string, SETSMARTFinancials>()
+  for (const row of rows) {
+    if (row?.year && row?.quarter) {
+      indexByYearQuarter.set(`${row.year}-Q${row.quarter}`, row)
     }
   }
-  return map
+  return indexByYearQuarter
 }
 
 const safeLookupMetric = (record: SETSMARTFinancials | undefined, metricKey: keyof SETSMARTFinancials) => {
@@ -108,23 +94,48 @@ const safeLookupMetric = (record: SETSMARTFinancials | undefined, metricKey: key
   return record[metricKey]
 }
 
-export const buildYearColumns = (
-  rows: SETSMARTFinancials[],
-): Column<FinancialMetricRow>[] => {
-  const latestByYear = latestFinancialByYear(rows)
-  const years = sortedYearsFromMap(latestByYear)
+// Build yearly columns from rows returned by toYearlyBase.
+// Each row looks like: { key: 'totalAssets', metric: 'Total Assets', '2021': 123, '2022': 456 }
+export const buildYearColumnsFromYearlyRows = (
+  yearlyRows: Array<Record<string, unknown>>,
+): Column<Record<string, unknown>>[] => {
+  // simple check if a key looks like a year (e.g., "2021")
+  const isYearKey = (k: string) => {
+    if (k.length !== 4) return false
+    for (let i = 0; i < 4; i++) {
+      const c = k[i]
+      if (c < '0' || c > '9') return false
+    }
+    return true
+  }
 
-  // First column always lists the metric label.
-  const columns: Column<FinancialMetricRow>[] = [
-    { key: 'metric', header: 'Metric', format: (_value, row) => row.label },
+  // find all years that look like "2021"
+  const yearKeys: string[] = []
+  for (const yearlyRow of yearlyRows) {
+    const rowKeys = Object.keys(yearlyRow)
+    for (const key of rowKeys) {
+      if (isYearKey(key)) {
+        if (!yearKeys.includes(key)) {
+          yearKeys.push(key)
+        }
+      }
+    }
+  }
+
+  // sort years from old to new
+  yearKeys.sort((a, b) => Number(a) - Number(b))
+
+  // first column is just the metric name
+  const columns: Column<Record<string, unknown>>[] = [
+    { key: 'metric', header: 'Metric', format: (_unused, row: any) => (row as any).metric ?? (row as any).label ?? '-' },
   ]
 
-  // Add one column per year populated with that year's latest quarterly record.
-  for (const y of years) {
+  // then one column per year
+  for (const yearKey of yearKeys) {
     columns.push({
-      key: String(y),
-      header: String(y),
-      format: (_value, row) => formatCell(safeLookupMetric(latestByYear.get(y), row.key)),
+      key: yearKey,
+      header: yearKey,
+      format: (value) => formatCell(value),
     })
   }
 
@@ -135,8 +146,8 @@ export const buildQuarterColumns = (
   rows: SETSMARTFinancials[],
   count = 5,
 ): Column<FinancialMetricRow>[] => {
-  const labels = lastNQuarterLabels(rows, count)
-  const byKey = recordsByYearQuarter(rows)
+  const recentQuarterLabels = lastNQuarterLabels(rows, count)
+  const recordsIndex = recordsByYearQuarter(rows)
 
   // First column always lists the metric label.
   const columns: Column<FinancialMetricRow>[] = [
@@ -144,14 +155,14 @@ export const buildQuarterColumns = (
   ]
 
   // Append a column for each recent quarter label.
-  for (const label of labels) {
-    const [yearText, quarterText] = label.split(' ')
-    const quarterKey = `${yearText}-Q${quarterText.slice(1)}`
+  for (const quarterLabel of recentQuarterLabels) {
+    const [yearText, quarterText] = quarterLabel.split(' ')
+    const yearQuarterKey = `${yearText}-Q${quarterText.slice(1)}`
 
     columns.push({
-      key: label,
-      header: label,
-      format: (_value, row) => formatCell(safeLookupMetric(byKey.get(quarterKey), row.key)),
+      key: quarterLabel,
+      header: quarterLabel,
+      format: (_value, row) => formatCell(safeLookupMetric(recordsIndex.get(yearQuarterKey), row.key)),
     })
   }
 
