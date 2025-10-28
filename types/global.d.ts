@@ -1,9 +1,11 @@
 declare global {
+    // Form payload for the sign-in page.
     type SignInFormData = {
         email: string;
         password: string;
     };
 
+    // Quote snapshot returned from the SETSMART market data API.
     type SETSMARTStockQuote = {
         date: string;
         symbol: string;
@@ -29,57 +31,53 @@ declare global {
         volumeTurnover: number;
     };
 
-    export type SETSMARTFinancials = {
-    symbol: string;
-    year: number;
-    quarter: number;
-    dateAsof: string;
-    financialStatementType: string;
-    accountPeriod: string;
+    // Quarterly financial statement payload sourced from SETSMART.
+    type SETSMARTFinancials = {
+        symbol: string;
+        year: number;
+        quarter: number;
+        dateAsof: string;
+        financialStatementType: string;
+        accountPeriod: string;
 
-    // Balance sheet (THB thousands)
-    totalAssets: number;
-    totalLiabilities: number;
-    shareholderEquity: number;
-    paidupShareCapital: number;
+        // Balance sheet (THB thousands)
+        totalAssets: number;
+        totalLiabilities: number;
+        shareholderEquity: number;
+        paidupShareCapital: number;
 
-    // P/L (quarter & accum)
-    totalRevenueQuarter: number;
-    totalRevenueAccum: number;
-    ebitQuarter: number;
-    ebitAccum: number;
-    netProfitQuarter: number;
-    netProfitAccum: number;
-    epsQuarter: number; // Baht/share
-    epsAccum: number;   // Baht/share
+        // P/L (quarter & accum)
+        totalRevenueQuarter: number;
+        totalRevenueAccum: number;
+        ebitQuarter: number;
+        ebitAccum: number;
+        netProfitQuarter: number;
+        netProfitAccum: number;
+        epsQuarter: number; // Baht/share
+        epsAccum: number;   // Baht/share
 
-    // Cash flows (THB thousands, per quarter)
-    operatingCashFlow: number;
-    investingCashFlow: number;
-    financingCashFlow: number;
+        // Cash flows (THB thousands, per quarter)
+        operatingCashFlow: number;
+        investingCashFlow: number;
+        financingCashFlow: number;
     };
 
+    // Form payload for user registration.
     type SignUpFormData = {
         name: string;
         email: string;
         password: string;
     };
 
-    export type CompanyItem = {
+    // Minimal company record stored in user lists.
+    type CompanyItem = {
         id: string
         symbol: string
         name: string
         favorite?: boolean
     }
 
-    type CountrySelectProps = {
-        name: string;
-        label: string;
-        control: Control;
-        error?: FieldError;
-        required?: boolean;
-    };
-
+    // Props for reusable form inputs
     type FormInputProps = {
         name: string;
         label: string;
@@ -92,19 +90,33 @@ declare global {
         value?: string;
     };
 
-    type Option = {
-        value: string;
-        label: string;
+    // Authenticated user profile persisted in session.
+    type User = {
+        id: string;
+        name: string;
+        email: string;
     };
 
-    type SelectFieldProps = {
-        name: string;
-        label: string;
-        placeholder: string;
-        options: readonly Option[];
-        control: Control;
-        error?: FieldError;
-        required?: boolean;
+    // data for a period
+    type PeriodData = {
+      columns: Column[];
+      rows: any[]; 
+    };
+    
+    type PeriodTableProps = {
+      title: string;
+      yearly: PeriodData;
+      quarterly: PeriodData;
+      initialPeriod?: "yearly" | "quarterly";
+      className?: string;
+      emptyStateText?: string;
+    };
+
+    // column type 
+    type Column<TRow = any> = {
+        key: string;             
+        header: string;
+        format?: (value: any, row: TRow) => React.ReactNode; 
     };
 
     type FooterLinkProps = {
@@ -113,166 +125,6 @@ declare global {
         href: string;
     };
 
-    type SearchCommandProps = {
-        renderAs?: 'button' | 'text';
-        label?: string;
-        initialStocks: StockWithWatchlistStatus[];
-    };
-
-    type WelcomeEmailData = {
-        email: string;
-        name: string;
-        intro: string;
-    };
-
-    type User = {
-        id: string;
-        name: string;
-        email: string;
-    };
-
-    type Stock = {
-        symbol: string;
-        name: string;
-        exchange: string;
-        type: string;
-    };
-
-    type StockWithWatchlistStatus = Stock & {
-        isInWatchlist: boolean;
-    };
-
-    type FinnhubSearchResult = {
-        symbol: string;
-        description: string;
-        displaySymbol?: string;
-        type: string;
-    };
-
-    type FinnhubSearchResponse = {
-        count: number;
-        result: FinnhubSearchResult[];
-    };
-
-    type StockDetailsPageProps = {
-        params: Promise<{
-            symbol: string;
-        }>;
-    };
-
-    type WatchlistButtonProps = {
-        symbol: string;
-        company: string;
-        isInWatchlist: boolean;
-        showTrashIcon?: boolean;
-        type?: 'button' | 'icon';
-        onWatchlistChange?: (symbol: string, isAdded: boolean) => void;
-    };
-
-    type QuoteData = {
-        c?: number;
-        dp?: number;
-    };
-
-    type ProfileData = {
-        name?: string;
-        marketCapitalization?: number;
-    };
-
-    type FinancialsData = {
-        metric?: { [key: string]: number };
-    };
-
-    type SelectedStock = {
-        symbol: string;
-        company: string;
-        currentPrice?: number;
-    };
-
-    type WatchlistTableProps = {
-        watchlist: StockWithData[];
-    };
-
-    type StockWithData = {
-        userId: string;
-        symbol: string;
-        company: string;
-        addedAt: Date;
-        currentPrice?: number;
-        changePercent?: number;
-        priceFormatted?: string;
-        changeFormatted?: string;
-        marketCap?: string;
-        peRatio?: string;
-    };
-
-    type AlertsListProps = {
-        alertData: Alert[] | undefined;
-    };
-
-    type MarketNewsArticle = {
-        id: number;
-        headline: string;
-        summary: string;
-        source: string;
-        url: string;
-        datetime: number;
-        category: string;
-        related: string;
-        image?: string;
-    };
-
-    type WatchlistNewsProps = {
-        news?: MarketNewsArticle[];
-    };
-
-    type SearchCommandProps = {
-        open?: boolean;
-        setOpen?: (open: boolean) => void;
-        renderAs?: 'button' | 'text';
-        buttonLabel?: string;
-        buttonVariant?: 'primary' | 'secondary';
-        className?: string;
-    };
-
-    type AlertData = {
-        symbol: string;
-        company: string;
-        alertName: string;
-        alertType: 'upper' | 'lower';
-        threshold: string;
-    };
-
-    type AlertModalProps = {
-        alertId?: string;
-        alertData?: AlertData;
-        action?: string;
-        open: boolean;
-        setOpen: (open: boolean) => void;
-    };
-
-    type RawNewsArticle = {
-        id: number;
-        headline?: string;
-        summary?: string;
-        source?: string;
-        url?: string;
-        datetime?: number;
-        image?: string;
-        category?: string;
-        related?: string;
-    };
-
-    type Alert = {
-        id: string;
-        symbol: string;
-        company: string;
-        alertName: string;
-        currentPrice: number;
-        alertType: 'upper' | 'lower';
-        threshold: number;
-        changePercent?: number;
-    };
 }
 
 export {};

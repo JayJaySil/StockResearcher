@@ -1,4 +1,3 @@
-import type { Column } from '@/components/PeriodTable'
 import { formatLargeNum } from '@/lib/utils'
 
 // Table row type for financial metrics
@@ -31,6 +30,7 @@ const quickSortQuarterLabels = (arr: string[]): string[] => {
 
   for (const label of arr) {
     const parsed = parseQuarterLabel(label)
+    // Group labels strictly earlier than pivot into left, equal into middle, and later into right.
     if (parsed.year === pivotParsed.year && parsed.quarter === pivotParsed.quarter) {
       middle.push(label)
     } else if (
@@ -43,6 +43,7 @@ const quickSortQuarterLabels = (arr: string[]): string[] => {
     }
   }
 
+  // Combine recursively sorted partitions with the pivot-equivalent labels in the middle.
   return [...quickSortQuarterLabels(left), ...middle, ...quickSortQuarterLabels(right)]
 }
 
@@ -57,11 +58,15 @@ export const latestFinancialByYear = (rows: SETSMARTFinancials[]) => {
   const map = new Map<number, SETSMARTFinancials>()
   for (const rec of rows) {
     if (!rec?.year) continue
+
+    // Only keep the most recent quarter encountered for each year.
     const existing = map.get(rec.year)
+
     if (!existing || Number(rec.quarter ?? 0) > Number(existing.quarter ?? 0)) {
       map.set(rec.year, rec)
     }
   }
+  
   return map
 }
 
@@ -109,10 +114,12 @@ export const buildYearColumns = (
   const latestByYear = latestFinancialByYear(rows)
   const years = sortedYearsFromMap(latestByYear)
 
+  // First column always lists the metric label.
   const columns: Column<FinancialMetricRow>[] = [
     { key: 'metric', header: 'Metric', format: (_value, row) => row.label },
   ]
 
+  // Add one column per year populated with that year's latest quarterly record.
   for (const y of years) {
     columns.push({
       key: String(y),
@@ -131,10 +138,12 @@ export const buildQuarterColumns = (
   const labels = lastNQuarterLabels(rows, count)
   const byKey = recordsByYearQuarter(rows)
 
+  // First column always lists the metric label.
   const columns: Column<FinancialMetricRow>[] = [
     { key: 'metric', header: 'Metric', format: (_value, row) => row.label },
   ]
 
+  // Append a column for each recent quarter label.
   for (const label of labels) {
     const [yearText, quarterText] = label.split(' ')
     const quarterKey = `${yearText}-Q${quarterText.slice(1)}`

@@ -75,39 +75,40 @@ export const toYearlyBase = async (rawData: SETSMARTFinancials[]) => {
   const yearData = Object.values(latestByYear);
 
   const metrics = [
-  { key: 'totalAssets', label: 'Total Assets' },
-  { key: 'totalLiabilities', label: 'Total Liabilities' },
-  { key: 'shareholderEquity', label: 'Shareholder Equity' },
-  { key: 'paidupShareCapital', label: 'Paid-up Share Capital' },
-  { key: 'totalRevenueAccum', label: 'Total Revenue (Accum)' },
-  { key: 'ebitAccum', label: 'EBIT (Accum)' },
-  { key: 'netProfitAccum', label: 'Net Profit (Accum)' },
-  { key: 'epsAccum', label: 'EPS (Accum)' },
-  { key: 'operatingCashFlow', label: 'Operating Cash Flow' },
-  { key: 'investingCashFlow', label: 'Investing Cash Flow' },
-  { key: 'financingCashFlow', label: 'Financing Cash Flow' },
-  { key: 'roe', label: 'ROE' },
-  { key: 'roa', label: 'ROA' },
-  { key: 'netProfitMarginAccum', label: 'Net Profit Margin (Accum)' },
-  { key: 'de', label: 'Debt to Equity (D/E)' },
-  { key: 'fixedAssetTurnover', label: 'Fixed Asset Turnover' },
-  { key: 'totalAssetTurnover', label: 'Total Asset Turnover' }
+    { key: 'totalAssets', label: 'Total Assets' },
+    { key: 'totalLiabilities', label: 'Total Liabilities' },
+    { key: 'shareholderEquity', label: 'Shareholder Equity' },
+    { key: 'paidupShareCapital', label: 'Paid-up Share Capital' },
+    { key: 'totalRevenueAccum', label: 'Total Revenue (Accum)' },
+    { key: 'ebitAccum', label: 'EBIT (Accum)' },
+    { key: 'netProfitAccum', label: 'Net Profit (Accum)' },
+    { key: 'epsAccum', label: 'EPS (Accum)' },
+    { key: 'operatingCashFlow', label: 'Operating Cash Flow' },
+    { key: 'investingCashFlow', label: 'Investing Cash Flow' },
+    { key: 'financingCashFlow', label: 'Financing Cash Flow' },
+    { key: 'roe', label: 'ROE' },
+    { key: 'roa', label: 'ROA' },
+    { key: 'netProfitMarginAccum', label: 'Net Profit Margin (Accum)' },
+    { key: 'de', label: 'Debt to Equity (D/E)' },
+    { key: 'fixedAssetTurnover', label: 'Fixed Asset Turnover' },
+    { key: 'totalAssetTurnover', label: 'Total Asset Turnover' }
   ];
 
   const result = [];
 
-  for (const m of metrics) {
-  const obj: any = { metric: m.label };
+  //Transforms array of objects to a displayable format
+  for (const metricDefinition of metrics) {
+    const metricRow: Record<string, unknown> = { metric: metricDefinition.label };
 
-    for (const item of yearData) {
-      const y = String(item.year);
-      const value = (item as any)[m.key];
-      if (value != null) {
-        obj[y] = value;
+    for (const yearlyRecord of yearData) {
+      const yearKey = String(yearlyRecord.year);
+      const metricValue = (yearlyRecord as any)[metricDefinition.key];
+      if (metricValue != null) {
+        metricRow[yearKey] = metricValue;
       }
     }
 
-  result.push(obj);
+    result.push(metricRow);
   }
 
   return result;

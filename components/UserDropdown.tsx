@@ -1,4 +1,5 @@
 'use client'
+// Authenticated user menu with profile summary and sign-out shortcut.
 
 import {
     DropdownMenu,
@@ -10,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import {useRouter} from "next/navigation";
 import {Button} from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {LogOut} from "lucide-react";
 import NavItems from "@/components/NavItems";
 import {signOut} from "@/lib/actions/auth.actions";
@@ -18,6 +19,7 @@ import {signOut} from "@/lib/actions/auth.actions";
 const UserDropdown = ({user} : {user: User}) => {
     const router = useRouter();
 
+    // Sign the user out and redirect to the sign-in page.
     const handleSignOut = async () => {
         await signOut();
         router.push("/sign-in");

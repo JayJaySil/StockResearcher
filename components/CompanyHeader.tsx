@@ -1,7 +1,6 @@
 // CompanyHeader renders the app header for company-focused pages with nav and user menu.
 import React from 'react'
 import Link from "next/link";
-import Image from "next/image";
 import NavItems from "@/components/NavItems";
 import UserDropdown from "@/components/UserDropdown";
 

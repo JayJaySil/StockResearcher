@@ -4,12 +4,13 @@ import { Toaster } from "@/components/ui/sonner"
 import "./globals.css";
 import React from "react";
 
-
+// Self-host the Geist Sans font and expose it as a CSS custom property.
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
 
+// Self-host the Geist Mono font for code-like typography.
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
@@ -30,6 +31,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        {/* Global app shell: render page content and shared toasts */}
         {children}
         <Toaster />
       </body>

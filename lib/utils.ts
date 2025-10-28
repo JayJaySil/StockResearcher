@@ -53,21 +53,6 @@ export function formatLargeNum(number: number): string {
     return `${sign}${n.toFixed(2)}`; // Below one million, show full amount
 }
 
-// Get today's date range (from today to today)
-// Today's date range as { from: YYYY-MM-DD, to: YYYY-MM-DD }.
-export const getTodayDateRange = () => {
-    const today = new Date();
-    const todayString = today.toISOString().split('T')[0];
-    return {
-        to: todayString,
-        from: todayString,
-    };
-};
-
-// Get today's date string in YYYY-MM-DD format
-// Today's date as YYYY-MM-DD (UTC).
-export const getTodayString = () => new Date().toISOString().split('T')[0];
-
 // Format a price with 2 decimal places (en-US).
 export const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {

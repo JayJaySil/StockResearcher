@@ -10,7 +10,7 @@ export const isValidStockSymbol = async (symbol: string): Promise<boolean> => {
     const sym = symbol.trim().toUpperCase();
 
     // Allow letters (A–Z), digits (0–9), and dash (e.g., ABC-W1); enforce 1–8 chars to match common SET tickers
-    // if (!/^[A-Z0-9-]{1,8}$/.test(sym)) return false;
+    if (!/^[A-Z0-9-]{1,8}$/.test(sym)) return false;
 
     const apiKey = process.env.SETSMART_API_KEY;
     if (!apiKey) {

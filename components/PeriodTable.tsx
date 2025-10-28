@@ -11,27 +11,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-// column type 
-export type Column<TRow = any> = {
-  key: string;             
-  header: string;
-  format?: (value: any, row: TRow) => React.ReactNode; 
-};
 
-// data for a period
-type PeriodData = {
-  columns: Column[];
-  rows: any[]; 
-};
 
-type PeriodTableProps = {
-  title: string;
-  yearly: PeriodData;
-  quarterly: PeriodData;
-  initialPeriod?: "yearly" | "quarterly";
-  className?: string;
-  emptyStateText?: string;
-};
+
 
 export default function PeriodTable(props: PeriodTableProps) {
   const [period, setPeriod] = React.useState<"yearly" | "quarterly">(

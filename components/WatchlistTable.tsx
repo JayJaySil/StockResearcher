@@ -1,6 +1,5 @@
 'use client'
-// WatchlistTable renders the user's saved companies and supports removal with
-// discriminated server-action results surfaced via toast messages.
+// Display the user's watchlisted companies with quick navigation and removal actions.
 
 import React, { useState } from 'react'
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table'
@@ -28,6 +27,7 @@ const WatchlistTable = ({ companies, onRemove }: WatchlistTableProps) => {
     const [removing, setRemoving] = useState<string | null>(null)
     const router = useRouter()
 
+    // Navigate to the dashboard view for the selected company.
     const handleRowClick = (company: Company) => {
         router.push(`/dashboard?symbol=${company.symbol}&companyId=${company.companyId}`)
     }
@@ -53,6 +53,7 @@ const WatchlistTable = ({ companies, onRemove }: WatchlistTableProps) => {
     }
 
     if (companies.length === 0) {
+        // Empty state when the user has no saved companies yet.
         return (
             <div className="text-center py-10 text-gray-500">
                 <p>No stocks in your watchlist yet.</p>
