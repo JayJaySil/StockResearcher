@@ -74,7 +74,7 @@ const Home = () => {
                     <h2 className="watchlist-title">My Watchlist</h2>
                     <AddStock onAdded={handleUpdate} />
                 </div>
-                <WatchlistTable companies={watchlist} onRemove={handleUpdate} />
+                <WatchlistTable companies={watchlist} onRemove={handleUpdate} onFavourite={handleUpdate} />
             </div>
         </section>
     )

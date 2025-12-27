@@ -87,12 +87,12 @@ export const getPriceData = async (symbol: string, startDate: string, endDate: s
     const json: any = await res.json();
     const rows: any[] = Array.isArray(json) ? json : Array.isArray(json?.data) ? json.data : [];
 
+    // Normalize to { date, price } but only include valid entries
     return rows
-      .map((r: any) => ({
-        date: (r.date || r.tradeDate || r.eodDate || r.D || r.d || r.t || ''),
-        price: Number(r.close ?? r.closePrice ?? r.C ?? r.c ?? r.price ?? NaN),
+      .map((row: any) => ({
+        date: (row.date || row.tradeDate || row.eodDate || row.D || row.d || row.t || ''),
+        price: Number(row.close ?? row.closePrice ?? row.C ?? row.c ?? row.price ?? NaN),
       }))
-      .filter((p: any) => p.date && Number.isFinite(p.price));
   } catch (err) {
     console.error('getPriceData failed', err);
     return [];

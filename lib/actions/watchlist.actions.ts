@@ -93,7 +93,8 @@ export const getUserWatchlist = async () => {
         if (!session?.user) redirect('/sign-in');
 
         const watchlist = await Company.find({ userId: session.user.id })
-        .sort({ addedAt: -1 })
+        // Show favourites first, then newest additions.
+        .sort({ favourite: -1, addedAt: -1 })
         .lean();
 
         return JSON.parse(JSON.stringify(watchlist));
@@ -101,5 +102,39 @@ export const getUserWatchlist = async () => {
     } catch (error) {
         console.error('Error fetching watchlist:', error);
         return [];
+    }
+};
+
+// Toggle the favourite flag for a watchlist symbol for the authenticated user.
+export const toggleFavourite = async (symbol: string) => {
+    try {
+        await connectToDatabase()
+
+        const session = await auth.api.getSession({
+            headers: await headers(),
+        });
+        if (!session?.user) redirect('/sign-in');
+
+        const normalizedSymbol = symbol.toUpperCase();
+
+        // Find the user's watchlist entry and flip the favourite flag.
+        const existingItem = await Company.findOne({
+            userId: session.user.id,
+            symbol: normalizedSymbol,
+        });
+
+        if (!existingItem) {
+            return { success: false, error: 'Stock not found in watchlist' };
+        }
+
+        existingItem.favourite = !existingItem.favourite;
+        await existingItem.save();
+
+        revalidatePath('/');
+
+        return { success: true, favourite: existingItem.favourite };
+    } catch (error) {
+        console.error('Error toggling favourite:', error);
+        return { success: false, error: 'Failed to toggle favourite' };
     }
 };
