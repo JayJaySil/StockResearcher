@@ -81,7 +81,6 @@ export async function POST(req: Request) {
 
     const activeFile = await waitForActive(uploadedName, (req as any).signal);
 
-    // Align with Inngest functions.ts default model style
     const modelId = process.env.GEMINI_MODEL_ID || "gemini-2.5-flash-lite";
     const model = genAI.getGenerativeModel({ model: modelId });
 
