@@ -26,3 +26,4 @@ CompanySchema.index({ userId: 1, symbol: 1 }, { unique: true });
 
 export const Company: Model<CompanyItem> =
     (models?.Company as Model<CompanyItem>) || model<CompanyItem>('Company', CompanySchema);
+

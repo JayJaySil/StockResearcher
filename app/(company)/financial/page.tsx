@@ -9,6 +9,7 @@ import { getFinancials, toYearlyBase } from "@/lib/actions/financial.actions"
 type MetricRow = FinancialMetricRow
 
 const FinancialPage = () => {
+  // Extract symbol and companyId from URL parameters
   const searchParams = useSearchParams()
   const symbol = searchParams.get("symbol")
   const companyId = searchParams.get("companyId")

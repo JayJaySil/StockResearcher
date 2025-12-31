@@ -22,12 +22,14 @@ export default function DividendUploader({ symbol, companyId, className, onSaved
   const [parsing, setParsing] = useState(false)
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    //Only 1 file accepted
     const file = acceptedFiles[0]
     if (!file) {
       toast.error("No file selected")
       return
     }
     setParsing(true)
+    //Parse Excel into JSON
     try {
       const fileArrayBuffer = await file.arrayBuffer()
       const workbook = XLSX.read(fileArrayBuffer, { type: "array" })
@@ -42,13 +44,13 @@ export default function DividendUploader({ symbol, companyId, className, onSaved
 
       toast.success(`Saved ${res.count} dividend record(s) for ${symbol}`)
       onSaved?.(res.count)
-    } catch (e) {
-      console.error(e)
+    } catch (error) {
+      console.error(error)
       toast.error("Failed to parse spreadsheet")
     } finally {
       setParsing(false)
     }
-  }, [companyId, symbol, onSaved])
+  }, [companyId, symbol, onSaved]) //Only run when files change
 
   //Validation checks
   const onDropRejected = useCallback((fileRejections: FileRejection[]) => {
