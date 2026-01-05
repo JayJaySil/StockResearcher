@@ -1,6 +1,6 @@
 'use client'
 // Authenticated user menu with profile summary and sign-out shortcut.
-
+// https://www.youtube.com/watch?v=gu4pafNCXng
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -19,7 +19,7 @@ import {signOut} from "@/lib/actions/auth.actions";
 const UserDropdown = ({user} : {user: User}) => {
     const router = useRouter();
 
-    // Sign the user out and redirect to the sign-in page.
+    // Signout user and redirect to signin
     const handleSignOut = async () => {
         await signOut();
         router.push("/sign-in");

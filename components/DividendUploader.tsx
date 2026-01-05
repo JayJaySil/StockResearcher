@@ -1,3 +1,6 @@
+//https://www.youtube.com/watch?v=83bECYmPbI4&t=9s
+//https://ui.shadcn.com/docs/components/card
+
 "use client"
 
 import React, { useCallback, useState } from "react"

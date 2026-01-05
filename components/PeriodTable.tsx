@@ -1,3 +1,4 @@
+// https://ui.shadcn.com/docs/components/table
 "use client";
 
 import React from "react";
@@ -10,10 +11,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-
-
-
 
 export default function PeriodTable(props: PeriodTableProps) {
   const [period, setPeriod] = React.useState<"yearly" | "quarterly">(

@@ -1,5 +1,6 @@
 'use client'
 // gets access to browser functionalities eg, path
+// https://www.youtube.com/watch?v=gu4pafNCXng&t=15006s
 import React from 'react'
 import Link from "next/link";
 import {usePathname, useSearchParams} from "next/navigation";

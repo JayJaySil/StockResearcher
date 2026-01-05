@@ -1,6 +1,8 @@
 "use client"
 // OneReportSummarizer lets users upload a 56-1 PDF and shows a Gemini-powered
 // Markdown summary; includes size/type validation and result toasts.
+// https://remarkjs.github.io/react-markdown/
+// https://www.youtube.com/watch?v=83bECYmPbI4&t=9s
 
 import React, { useCallback, useEffect, useState } from "react"
 import { useDropzone, FileRejection } from "react-dropzone"

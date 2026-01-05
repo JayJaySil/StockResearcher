@@ -1,5 +1,6 @@
 'use client'
-// Render a selectable range price history chart backed by server-fetched time series data.
+// Render a selectable range price history chart.
+// https://ui.shadcn.com/docs/components/table
 
 import { useEffect, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
@@ -16,7 +17,7 @@ interface PriceChartProps {
   symbol: string;
 }
 
-// Determine the start date based on the selected range (1Y, 3Y, 5Y).
+// Get the start to end range from the selections (1Y, 3Y, 5Y).
 function rangeToStart(end: Date, r: RangeKey) {
   const years = { '1Y': 1, '3Y': 3, '5Y': 5}[r];
   const d = new Date(end);
@@ -42,7 +43,7 @@ const PriceChart = ({symbol}: PriceChartProps) => {
       try {
         const rows: unknown = await getPriceData(symbol, startStr, endStr);
         if (isGone) return;
-        // Normalize payload to an array of price points, or empty on unexpected response.
+        // Allow for an array of prices
         setData(Array.isArray(rows) ? (rows as PricePoint[]) : []);
       } catch (_error) {
         if (isGone) return;

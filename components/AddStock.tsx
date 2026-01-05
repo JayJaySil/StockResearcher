@@ -1,3 +1,6 @@
+//Dialog component to add a stock to the user's watchlist
+
+//https://ui.shadcn.com/docs/components/dialog
 'use client'
 
 import React, { useState } from 'react'

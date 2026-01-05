@@ -1,3 +1,7 @@
+//https://www.youtube.com/watch?v=6CgeNtJwKFs
+//https://www.youtube.com/watch?v=gu4pafNCXng&t=15006s
+//https://www.raymondcamden.com/2024/05/21/using-the-gemini-file-api-for-prompts-with-media
+
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { GoogleAIFileManager } from "@google/generative-ai/server";
@@ -13,11 +17,11 @@ export const maxDuration = 60
 export async function POST(req: Request) {
   try {
     // Accept multipart form-data: file (PDF), companyId, symbol, optional fileName
-    const form = await req.formData();
-    const file = form.get("file") as File | null;
-    const companyId = (form.get("companyId") as string | null)?.trim();
-    const symbol = (form.get("symbol") as string | null)?.trim();
-    const providedName = (form.get("fileName") as string | null) || undefined;
+    const formData = await req.formData();
+    const file = formData.get("file") as File | null;
+    const companyId = (formData.get("companyId") as string | null)?.trim();
+    const symbol = (formData.get("symbol") as string | null)?.trim();
+    const providedFileName = (formData.get("fileName") as string | null) || undefined;
 
     if (!file) {
       return NextResponse.json({ error: "Missing file in form-data under 'file'" }, { status: 400 });
@@ -26,65 +30,68 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing 'companyId' in form-data" }, { status: 400 });
     }
 
-    const arrayBuf = await file.arrayBuffer();
-    const fileBuffer = Buffer.from(arrayBuf);
+    const fileArrayBuffer = await file.arrayBuffer();
+    const fileBuffer = Buffer.from(fileArrayBuffer);
     const mimeType = (file.type && file.type.length > 0 ? file.type : "application/pdf");
-    const fileName = providedName || (file as any).name || "56-1.pdf";
+    const fileName = providedFileName || (file as any).name || "56-1.pdf";
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: "GEMINI_API_KEY not configured" }, { status: 500 });
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const fileManager = new GoogleAIFileManager(apiKey);
+    const generativeAIClient = new GoogleGenerativeAI(apiKey);
+    const geminiFileManager = new GoogleAIFileManager(apiKey);
 
-    // Upload the PDF as a Gemini File so the model can reference it directly
+    // Upload the PDF as a Gemini File
     const displayName = fileName;
-    const upload = await fileManager.uploadFile(fileBuffer, {
+    const uploadResult = await geminiFileManager.uploadFile(fileBuffer, {
       mimeType,
       displayName,
     });
 
-    // Upload responses can differ by SDK version; normalize common fields
-    const uploadedFileAny: any = (upload as any).file ?? upload;
-    const uploadedName: string = uploadedFileAny.name;
+    // Upload responses
+    const uploadedFileRecord: any = (uploadResult as any).file ?? uploadResult;
+    const uploadedFileName: string = uploadedFileRecord.name;
 
-    // Newly uploaded files may be PROCESSING. Poll until ACTIVE before using.
-    async function waitForActive(name: string, signal?: AbortSignal) {
-      const envTimeout = Number(process.env.GEMINI_FILE_ACTIVATE_TIMEOUT_MS || 300_000);
-      const timeoutMs = Math.min(Number.isFinite(envTimeout) ? envTimeout : 300_000, 55_000); // keep under typical serverless limits
-      const deadline = Date.now() + timeoutMs;
-      let wait = 1_000; // start 1s, backoff to max 5s
-      let lastState: string | undefined = uploadedFileAny.state as string | undefined;
-      while (Date.now() < deadline) {
+    // Newly uploaded files may be processing for a long time.
+    async function waitForActiveFile(fileName: string, signal?: AbortSignal) {
+      const configuredFileActivationTimeoutMs = Number(process.env.GEMINI_FILE_ACTIVATE_TIMEOUT_MS || 300_000);
+      const activationTimeoutMs = Math.min(
+        Number.isFinite(configuredFileActivationTimeoutMs) ? configuredFileActivationTimeoutMs : 300_000,
+        55_000
+      ); // keep under typical serverless limits
+      const activationDeadlineAt = Date.now() + activationTimeoutMs;
+      let backoffMs = 1_000; // start 1s, backoff to max 5s
+      let lastFileState: string | undefined = uploadedFileRecord.state as string | undefined;
+      while (Date.now() < activationDeadlineAt) {
         if (signal?.aborted) {
           throw new Error('Client aborted while waiting for file to activate');
         }
-        const f: any = await fileManager.getFile(name);
-        const state = (f.file?.state ?? f.state) as string | undefined;
-        lastState = state;
-        if (state === 'ACTIVE') {
-          const uri = f.file?.uri || f.uri
-          const mimeType = f.file?.mimeType || f.mimeType
-          const name = f.file?.name || f.name
-          return { uri, mimeType, name }
+        const fileResponse: any = await geminiFileManager.getFile(fileName);
+        const fileState = (fileResponse.file?.state ?? fileResponse.state) as string | undefined;
+        lastFileState = fileState;
+        if (fileState === 'ACTIVE') {
+          const fileUri = fileResponse.file?.uri || fileResponse.uri;
+          const fileMimeType = fileResponse.file?.mimeType || fileResponse.mimeType;
+          const activeFileName = fileResponse.file?.name || fileResponse.name;
+          return { uri: fileUri, mimeType: fileMimeType, name: activeFileName };
         }
-        if (state === 'FAILED' || state === 'DELETED' || state === 'EXPIRED') {
-          throw new Error(`File is not usable. state=${lastState}`);
+        if (fileState === 'FAILED' || fileState === 'DELETED' || fileState === 'EXPIRED') {
+          throw new Error(`File is not usable. state=${lastFileState}`);
         }
-        await new Promise((r) => setTimeout(r, wait));
-        wait = Math.min(wait * 1.5, 5_000);
+        await new Promise((resolve) => setTimeout(resolve, backoffMs));
+        backoffMs = Math.min(backoffMs * 1.5, 5_000);
       }
-      throw new Error(`Timed out waiting for file to become ACTIVE. lastState=${lastState}`);
+      throw new Error(`Timed out waiting for file to become ACTIVE. lastState=${lastFileState}`);
     }
 
-    const activeFile = await waitForActive(uploadedName, (req as any).signal);
+    const activeFile = await waitForActiveFile(uploadedFileName, (req as any).signal);
 
-    const modelId = process.env.GEMINI_MODEL_ID || "gemini-2.5-flash-lite";
-    const model = genAI.getGenerativeModel({ model: modelId });
+    const modelName = process.env.GEMINI_MODEL_ID || "gemini-2.5-flash-lite";
+    const generativeModel = generativeAIClient.getGenerativeModel({ model: modelName });
 
-    const sys = `You are an equity research assistant. Summarize Thailand SEC 56-1 One Reports for fundamental investors. Write concise, well-structured points.
+    const systemPrompt = `You are an equity research assistant. Summarize Thailand SEC 56-1 One Reports for fundamental investors. Write concise, well-structured points.
 
 Return sections (in this exact order):
 - Company Overview
@@ -105,15 +112,15 @@ Formatting requirements (important):
 
 Keep it specific to the provided file. If ticker provided: ${symbol ?? "(none)"}.`;
 
-    const prompt = `Summarize the attached 56-1 One Report for investors. Not too wordy. Use bullet points where appropriate.`;
+    const userPrompt = `Summarize the attached 56-1 One Report for investors. Not too wordy. Use bullet points where appropriate.`;
 
-    const result = await model.generateContent([
-      { text: sys },
+    const generationResult = await generativeModel.generateContent([
+      { text: systemPrompt },
       { fileData: { fileUri: activeFile.uri, mimeType: activeFile.mimeType } },
-      { text: prompt },
+      { text: userPrompt },
     ]);
 
-    const summary = result.response.text();
+    const summary = generationResult.response.text();
 
     // Persist the summary keyed by companyId (no file stored)
     await connectToDatabase();
@@ -128,10 +135,10 @@ Keep it specific to the provided file. If ticker provided: ${symbol ?? "(none)"}
     );
 
     return NextResponse.json({ summary, companyId }, { status: 200 });
-  } catch (err: any) {
-    console.error("summarize-56-1 error", err);
-    const msg = typeof err?.message === 'string' ? err.message : 'Summarization failed';
-    return NextResponse.json({ error: msg }, { status: 500 });
+  } catch (error: any) {
+    console.error("summarize-56-1 error", error);
+    const errorMessage = typeof error?.message === 'string' ? error.message : 'Summarization failed';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
@@ -144,13 +151,13 @@ export async function GET(req: Request) {
     }
 
     await connectToDatabase();
-    const doc = await Summary.findOne({ companyId }).lean();
-    if (!doc || !doc.summary) {
+    const summaryDoc = await Summary.findOne({ companyId }).lean();
+    if (!summaryDoc || !summaryDoc.summary) {
       return NextResponse.json({ summary: null }, { status: 200 });
     }
-    return NextResponse.json({ summary: doc.summary, companyId }, { status: 200 });
-  } catch (err) {
-    console.error("summarize-56-1 GET error", err);
+    return NextResponse.json({ summary: summaryDoc.summary, companyId }, { status: 200 });
+  } catch (error) {
+    console.error("summarize-56-1 GET error", error);
     return NextResponse.json({ error: "Failed to load summary" }, { status: 500 });
   }
 }

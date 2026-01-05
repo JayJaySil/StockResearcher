@@ -1,4 +1,5 @@
 // CompanyHeader renders the app header for company-focused pages with nav and user menu.
+// https://www.youtube.com/watch?v=gu4pafNCXng&t=15006s
 import React from 'react'
 import Link from "next/link";
 import NavItems from "@/components/NavItems";

@@ -1,5 +1,5 @@
 'use client'
-// Display the user's watchlisted companies with quick navigation and removal actions.
+// Display user watchlist companies
 
 import React, { useState } from 'react'
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table'
@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { removeFromWatchlist, toggleFavourite } from '@/lib/actions/watchlist.actions'
 import { useRouter } from 'next/navigation'
 
+// Type props for companies
 type Company = {
     _id: string
     symbol: string
@@ -29,7 +30,7 @@ const WatchlistTable = ({ companies, onRemove, onFavourite }: WatchlistTableProp
     const [favouriting, setFavouriting] = useState<string | null>(null)
     const router = useRouter()
 
-    // Navigate to the dashboard view for the selected company.
+    // Go to company dashboard when click passing synbol and companyId through parameters
     const handleRowClick = (company: Company) => {
         router.push(`/dashboard?symbol=${company.symbol}&companyId=${company.companyId}`)
     }
@@ -55,14 +56,14 @@ const WatchlistTable = ({ companies, onRemove, onFavourite }: WatchlistTableProp
     }
 
     const handleFavouriteToggle = async (symbol: string, e: React.MouseEvent) => {
-        e.stopPropagation() // Prevent row click when toggling favourite
+        e.stopPropagation() // Stop row click when selecting favourite
         setFavouriting(symbol)
 
         try {
             const result = await toggleFavourite(symbol)
 
             if (result.success) {
-                // Refresh the watchlist so the updated star state is visible.
+                // Refresh watchlist
                 onFavourite?.()
             } else {
                 toast.error(result.error || 'Failed to update favourite')

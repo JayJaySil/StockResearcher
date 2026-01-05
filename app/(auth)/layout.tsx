@@ -1,3 +1,6 @@
+// General layout for authentication pages
+// https://www.youtube.com/watch?v=gu4pafNCXng&t=15006s
+
 import React from 'react'
 import {auth} from "@/lib/better-auth/auth";
 import {headers} from "next/headers";

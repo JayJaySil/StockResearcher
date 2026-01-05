@@ -1,3 +1,5 @@
+// Generallayout for company pages. Gets the user session and render the company header.
+
 import React from 'react'
 import CompanyHeader from "@/components/CompanyHeader"
 import {auth} from "@/lib/better-auth/auth"

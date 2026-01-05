@@ -1,7 +1,7 @@
 'use client';
 // SignUp page that registers users via Better Auth and provides clear
 // success/failure toasts using discriminated action results.
-
+// https://www.youtube.com/watch?v=gu4pafNCXng&t=15006s
 import {useForm} from "react-hook-form";
 import {Button} from "@/components/ui/button";
 import InputField from "@/components/forms/InputField";
