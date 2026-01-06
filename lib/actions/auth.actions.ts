@@ -1,10 +1,12 @@
-// Server actions for authentication (sign up/in/out) via Better Auth.
+//https://www.youtube.com/watch?v=gu4pafNCXng
+
+// Server actions for authentication using betterauth.
 'use server';
 import {auth} from "@/lib/better-auth/auth";
 import {headers} from "next/headers";
 
 
-// Sign a user up with email/password
+// Sign up using email and password
 export const signUpWithEmail = async ({email, password, name}: SignUpFormData) => {
     try {
         const response = await auth.api.signUpEmail({
@@ -18,7 +20,7 @@ export const signUpWithEmail = async ({email, password, name}: SignUpFormData) =
     }
 }
 
-// Sign the current session out.
+// Signout the user
 export const signOut = async () => {
     try {
         await auth.api.signOut({ headers: await headers()});
@@ -28,7 +30,7 @@ export const signOut = async () => {
     }
 }
 
-// Sign a user in with email/password.
+// Signin using email and password
 export const signInWithEmail = async ({email, password}: SignInFormData) => {
     try {
         const response = await auth.api.signInEmail({

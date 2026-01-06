@@ -1,5 +1,7 @@
-import {Schema, model, models, Document, Model} from 'mongoose';
+//https://www.youtube.com/watch?v=gu4pafNCXng
+//Mongoose schema for Company
 
+import {Schema, model, models, Document, Model} from 'mongoose';
 export interface CompanyItem extends Document {
     userId: string;
     companyId: string;

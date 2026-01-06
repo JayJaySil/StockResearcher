@@ -1,3 +1,6 @@
+///https://www.youtube.com/watch?v=gu4pafNCXng
+//Mongoose schema for Watchlist
+
 import {Schema, model, models, Document, Model} from 'mongoose';
 
 export interface WatchlistItem extends Document {

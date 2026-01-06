@@ -1,6 +1,8 @@
+//https://www.youtube.com/watch?v=gu4pafNCXng
+
 import React from 'react'
 import Link from "next/link";
-
+// Component that displays footer message with a link
 const FooterLink  = ({text, linkText, href}: FooterLinkProps) => {
     return (
         <div className="text-center pt-4">

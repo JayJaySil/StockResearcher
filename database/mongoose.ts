@@ -1,3 +1,6 @@
+///https://www.youtube.com/watch?v=gu4pafNCXng
+//Mongoose setup
+
 import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI;

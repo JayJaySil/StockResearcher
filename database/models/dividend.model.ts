@@ -1,3 +1,6 @@
+///https://www.youtube.com/watch?v=gu4pafNCXng
+//Mongoose schema for Dividend
+
 import mongoose, {Schema, model, models, Document, Model, Expression} from 'mongoose';
 
 export interface DividendItem extends Document {

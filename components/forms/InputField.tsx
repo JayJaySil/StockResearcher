@@ -1,8 +1,10 @@
+//https://www.youtube.com/watch?v=gu4pafNCXng
+
 import React from 'react'
 import {Label} from "@/components/ui/label";
 import {Input} from "@/components/ui/input";
 import {cn} from "@/lib/utils";
-
+// Inputfield component for forms
 const InputField = ({ name, label, placeholder, type = "text", register, error, validation, disabled, value}: FormInputProps) => {
     return (
         <div className="space-y-2">

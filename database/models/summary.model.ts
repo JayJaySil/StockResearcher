@@ -1,3 +1,6 @@
+///https://www.youtube.com/watch?v=gu4pafNCXng
+//Mongoose schema for Summary
+
 import {Schema, model, models, Document, Model} from 'mongoose';
 
 export interface SummaryItem extends Document {

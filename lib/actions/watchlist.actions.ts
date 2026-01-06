@@ -1,4 +1,5 @@
-// Server actions for CRUD on the user's watchlist.
+// CRUD on the user watchlist.
+// https://www.youtube.com/watch?v=gu4pafNCXng
 'use server'
 
 import { connectToDatabase } from '@/database/mongoose';
@@ -11,7 +12,6 @@ import {isValidStockSymbol} from "@/lib/actions/setsmart.actions";
 import {ObjectId} from "mongodb";
 
 // Add stock to watchlist
-// Add a symbol to the authenticated user's watchlist.
 export const addToWatchlist = async (symbol: string) => {
     try {
         await connectToDatabase()
@@ -58,7 +58,6 @@ export const addToWatchlist = async (symbol: string) => {
 };
 
 // Remove stock from watchlist
-// Remove a symbol from the authenticated user's watchlist.
 export const removeFromWatchlist = async (symbol: string) => {
     try {
         await connectToDatabase()
@@ -82,7 +81,7 @@ export const removeFromWatchlist = async (symbol: string) => {
     }
 };
 
-// Fetch the authenticated user's watchlist as plain JSON objects.
+// Get the user's watchlist as JSON objects.
 export const getUserWatchlist = async () => {
     try {
         await connectToDatabase()
@@ -105,7 +104,7 @@ export const getUserWatchlist = async () => {
     }
 };
 
-// Toggle the favourite flag for a watchlist symbol for the authenticated user.
+// Toggle favourites for a watchlist symbol.
 export const toggleFavourite = async (symbol: string) => {
     try {
         await connectToDatabase()
@@ -117,7 +116,7 @@ export const toggleFavourite = async (symbol: string) => {
 
         const normalizedSymbol = symbol.toUpperCase();
 
-        // Find the user's watchlist entry and flip the favourite flag.
+        // Query the users watchlist entry and toggle favourites.
         const existingItem = await Company.findOne({
             userId: session.user.id,
             symbol: normalizedSymbol,

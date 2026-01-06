@@ -1,7 +1,7 @@
-// Server actions for financial statements and formatting helpers.
+// Server actions for financial information
 'use server'
 
-// Get raw financial + ratio data by symbol from SETSMART.
+// Get financial data by symbol from the SETSMART API.
 export const getFinancials = async (symbol: string): Promise<SETSMARTFinancials[]> => {
   const apiKey = process.env.SETSMART_API_KEY;
   if (!apiKey) {
@@ -12,13 +12,14 @@ export const getFinancials = async (symbol: string): Promise<SETSMARTFinancials[
   const sym = (symbol || '').trim().toUpperCase();
   if (!sym) throw new Error('Symbol is required');
 
-  //Get year/quarter range
+  //Get year and quarter range
   const now = new Date();
   const endYear = now.getFullYear();
   const endQuarter = Math.floor((now.getMonth() + 3) / 3) //Most recent quarter
   const startYear = endYear - 5;
   const startQuarter = 1;
 
+  //Call SETSMART API
   try {
     const url = new URL('https://www.setsmart.com/api/listed-company-api/financial-data-and-ratio-by-symbol');
     url.searchParams.set('symbol', sym);
@@ -55,7 +56,7 @@ export const getFinancials = async (symbol: string): Promise<SETSMARTFinancials[
   }
 }
 
-// Reduce quartered records to one record per year (latest quarter).
+// Take quarterly records to only one record per year which is the latest quarter
 export const toYearlyBase = async (rawData: SETSMARTFinancials[]) => {
   const latestByYear: { [year: string]: SETSMARTFinancials } = {};
 
@@ -63,7 +64,7 @@ export const toYearlyBase = async (rawData: SETSMARTFinancials[]) => {
     const year = String(item.year);
     const quarter = Number(item.quarter);
 
-    // If we don’t have a record for this year yet, or this quarter is greater → replace
+    // If we dont have a record for this year yet, or this quarter is greater, replace it with the current record
     if (!(year in latestByYear) || quarter > Number(latestByYear[year].quarter)) {
       latestByYear[year] = item;
     }
@@ -71,9 +72,10 @@ export const toYearlyBase = async (rawData: SETSMARTFinancials[]) => {
 
   //latestByYear is an object with year keys that only stores the latest quarter data for each year
 
-  // Convert to array of SETSMARTFinancials
+  // Convert to array of SETSMARTFinancials objects
   const yearData = Object.values(latestByYear);
 
+  //Define the keys and labels for the financial table metrics we want
   const metrics = [
     { key: 'totalAssets', label: 'Total Assets (THB thousands)' },
     { key: 'totalLiabilities', label: 'Total Liabilities (THB thousands)' },
@@ -90,7 +92,7 @@ export const toYearlyBase = async (rawData: SETSMARTFinancials[]) => {
 
   const result = [];
 
-  //Transforms array of objects to a displayable format
+  //Takes the array of objects to a displayable format
   for (const metricDefinition of metrics) {
     const metricRow: Record<string, unknown> = { metric: metricDefinition.label, key: metricDefinition.key };
 

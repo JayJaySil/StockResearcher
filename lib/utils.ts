@@ -1,3 +1,6 @@
+//Util functions come frmo youtube tutorial
+//https://www.youtube.com/watch?v=gu4pafNCXng
+
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -37,8 +40,7 @@ export function delay(ms: number) {
 }
 
 // Formatted string like "$3.10T", "$900.00B", "$25.00M" or "$999,999.99"
-// Format large numbers into compact units:
-//  - >= 1e12 -> T, >= 1e9 -> B, >= 1e6 -> M, else 2 decimals.
+// Format large numbers with units M, B, T.
 export function formatLargeNum(number: number): string {
     if (!Number.isFinite(number)) return 'N/A';
 

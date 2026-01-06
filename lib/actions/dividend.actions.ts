@@ -1,4 +1,4 @@
-// Server actions for dividend CRUD and queries.
+// Server actions for dividend chart and queries
 'use server'
 
 import { connectToDatabase } from '@/database/mongoose'
@@ -12,8 +12,7 @@ export type storeDividendsResult =
   | { success: true; count: number }
   | { success: false; error: string }
 
-// Replace all dividend rows for a company with the provided items.
-// Returns a discriminated result with `count` on success.
+// Replace all dividend records for a company with the new records
 export async function storeDividendsInDB(
   companyId: string,
   items: DividendInput[],
@@ -24,7 +23,7 @@ export async function storeDividendsInDB(
 
     await connectToDatabase()
 
-    // Replace all dividends for this company in database
+    // Replace all dividend records for this company in database
     await Dividend.deleteMany({ companyId })
 
     const docs = items.map((i) => ({
@@ -42,7 +41,7 @@ export async function storeDividendsInDB(
   }
 }
 
-// Query all dividends for a company (ascending by payDate).
+// Query dividend records for a company sorted by payDate
 export async function getDividendsByCompany(companyId: string) {
   try {
     if (!companyId) return []
@@ -55,7 +54,7 @@ export async function getDividendsByCompany(companyId: string) {
   }
 }
 
-// Import dividend spreadsheet rows, validate them, and persist to MongoDB.
+// Import dividend spreadsheet rows and validate them.
 export async function importDividendsFromRows(params: {
   companyId: string
   symbol: string
@@ -94,7 +93,7 @@ export async function importDividendsFromRows(params: {
 
     const payDate = coerceToDate(rawPayDate)
     if (!payDate) {
-      return { success: false, error: `Row ${currentRow + 1} has a payment date I couldn't understand` }
+      return { success: false, error: `Row ${currentRow + 1} has a payment date not understood` }
     }
 
     let cleanedYield = rawYield as number | string | null | undefined
@@ -119,7 +118,7 @@ export async function importDividendsFromRows(params: {
 }
 
 function coerceToDate(value: unknown): Date | null {
-  // Excel often gives numbers, convert serials to JS Dates.
+  // Excel dates are numbers, convert to JS Dates.
   if (typeof value === 'number') {
     return new Date(Math.round((value - 25569) * 86400 * 1000))
   }
@@ -132,11 +131,13 @@ function coerceToDate(value: unknown): Date | null {
   return null
 }
 
+// Part US date strings to Date objects
 function parseUSDate(input: string): Date | null {
-  // Accept strings like "05/23/2025" or "5/23/2025" (with optional trailing *).
+  // Accept strings like "05/23/2025" or "5/23/2025".
   const trimmedDate = String(input).trim()
   const cleanedDate = trimmedDate.endsWith('*') ? trimmedDate.slice(0, -1).trim() : trimmedDate
 
+  // Extract digits from string
   const digits: number[] = []
   let numberBuffer = ''
   for (let index = 0; index < cleanedDate.length; index++) {
@@ -156,9 +157,11 @@ function parseUSDate(input: string): Date | null {
   if (numberBuffer.length > 0) digits.push(Number(numberBuffer))
   if (digits.length !== 3) return null
 
+  //Take digits into month/day/year variables
   const [month, day, year] = digits
   if (month < 1 || month > 12 || day < 1 || day > 31 || year < 1000 || year > 9999) return null
 
+  //Put those variables in a Date object
   const parsedDate = new Date(year, month - 1, day)
   if (parsedDate.getFullYear() !== year || parsedDate.getMonth() !== month - 1 || parsedDate.getDate() !== day) return null
   return parsedDate

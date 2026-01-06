@@ -4,12 +4,12 @@ import { formatLargeNum } from '@/lib/utils'
 export type FinancialMetricRow = { key: keyof SETSMARTFinancials; label: string }
 
 // Format a raw cell value for financial tables. Non numeric values is "-"
-// - Numbers are compacted (e.g., 1250000 -> "1.25M").
+// Numbers are reformatted to include K, M, B.
 export const formatCell = (value: unknown) => (
   typeof value === 'number' ? formatLargeNum(value) : '-'
 )
 
-//Parses '2024 Q1' To an object  { year: 2024, quarter: 1 }
+//Parses quarter labels '2024 Q1' To an object { year: 2024, quarter: 1 }
 const parseQuarterLabel = (quarterLabel: string): { year: number; quarter: number } => {
   const [yearText, quarterText] = quarterLabel.split(' ')
   return {
@@ -18,6 +18,7 @@ const parseQuarterLabel = (quarterLabel: string): { year: number; quarter: numbe
   }
 }
 
+//https://www.youtube.com/watch?v=F5RfNaYHlVA
 const quickSortQuarterLabels = (labels: string[]): string[] => {
   if (labels.length <= 1) return labels.slice()
 

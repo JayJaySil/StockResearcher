@@ -1,8 +1,7 @@
-// Server actions for dashboard data: basic stock info and chart price series.
+// Server actions for basic stock info and price graphs.
 'use server'
 
 //Return SETSMART most recent basic Stock Info
-// Fetch the most recent EOD quote for a symbol from SETSMART.
 export const getBasicStockInfo = async (symbol: string): Promise<SETSMARTStockQuote> => {
   const apiKey = process.env.SETSMART_API_KEY;
   if (!apiKey) {
@@ -13,13 +12,14 @@ export const getBasicStockInfo = async (symbol: string): Promise<SETSMARTStockQu
   const sym = (symbol || '').trim().toUpperCase();
   if (!sym) throw new Error('Symbol is required');
 
-  // Build date range: start = today, end = today - 20
+  // Setting date range
   const today = new Date();
   const endDate = today.toISOString().slice(0, 10);
   const startDateObj = new Date(today);
   startDateObj.setDate(today.getDate() - 20);
   const startDate = startDateObj.toISOString().slice(0, 10);
 
+  //Calling SETSMART API
   try {
     const url = new URL('https://www.setsmart.com/api/listed-company-api/eod-price-by-symbol');
     url.searchParams.set('symbol', sym);
@@ -55,7 +55,7 @@ export const getBasicStockInfo = async (symbol: string): Promise<SETSMARTStockQu
   }
 }
 
-// Fetch a date range of EOD prices and normalize to { date, price }[]
+// Get price data from SETSMART for the price graph in the format { date, price }[]
 export const getPriceData = async (symbol: string, startDate: string, endDate: string) => {
   try {
     const apiKey = process.env.SETSMART_API_KEY;

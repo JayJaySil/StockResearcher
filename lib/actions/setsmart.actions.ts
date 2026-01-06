@@ -1,15 +1,12 @@
-// Server-side helpers for validating symbols against SETSMART.
 'use server'
 
-// Checks if a given SET/SETTRADE stock code appears valid by querying the SETSMART EOD endpoint.
-// Quick heuristic: verifies a ticker returns any data in a short date window.
-// Avoids false positives by checking array/object shapes in the response.
+// Checks if a given SET stock code appears valid by querying the SETSMART API and await for their response.
 export const isValidStockSymbol = async (symbol: string): Promise<boolean> => {
   try {
     if (!symbol) return false;
     const sym = symbol.trim().toUpperCase();
 
-    // Allow letters (A–Z), digits (0–9), and dash (e.g., ABC-W1); enforce 1–8 chars to match common SET tickers
+    // Allow letters, digits, and dash 1-8 characters long for SET Symbols
     if (!/^[A-Z0-9-]{1,8}$/.test(sym)) return false;
 
     const apiKey = process.env.SETSMART_API_KEY;
@@ -30,10 +27,10 @@ export const isValidStockSymbol = async (symbol: string): Promise<boolean> => {
       cache: 'no-store',
     });
 
-    //if response return value not 200-299, return false
+    //if response return value not 200-299, it is error so the symbol doesnt exist.
     if (!res.ok) return false;
 
-    //get data from response
+    //Get data from the response
     let data: any;
     try {
       data = await res.json();
