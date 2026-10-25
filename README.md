@@ -2,6 +2,8 @@
 
 A personalised stock research app for companies listed on the **Stock Exchange of Thailand (SET)**. Build a watchlist, view price and financial data, track dividends, and get AI-generated summaries of a company's annual report (Form 56-1).
 
+[Thai Stock Researcher](https://thai-stocks.vercel.app/)
+
 > **Disclaimer:** StockResearcher is for educational and informational purposes only. It is not financial advice.
 
 ## Features
